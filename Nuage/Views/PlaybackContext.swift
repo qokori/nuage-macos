@@ -38,9 +38,10 @@ private func createOnPlay<T: SoundCloudIdentifiable>(playbackContext: [AnyHashab
             return
         }
         
+        let soundCloud = ProviderRegistry.shared.soundCloud
         let animation = player.queue.isEmpty ? Animation.default : nil
         withAnimation(animation) {
-            player.play(queue, from: startIndex)
+            player.play(queue.map(soundCloud.mediaTrack(for:)), from: startIndex)
         }
     }
 }

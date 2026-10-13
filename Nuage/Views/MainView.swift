@@ -61,8 +61,11 @@ struct MainView: View {
             if player.queue.count > 0 {
                 Divider()
                 PlayerView {
-                    if let track = player.currentStream, navigationPath != blockingNavigationPath {
-                        navigationPath.append(track, with: player.queue, startPlaybackAt: track, player: player)
+                    // Track detail is a SoundCloud screen; it needs the SoundCloud track.
+                    let bridge = ProviderRegistry.shared.soundCloud
+                    if let track = player.currentStream.flatMap(bridge.track(for:)), navigationPath != blockingNavigationPath {
+                        let queue = player.queue.compactMap(bridge.track(for:))
+                        navigationPath.append(track, with: queue, startPlaybackAt: track, player: player)
                         blockingNavigationPath = navigationPath
                     }
                 }
@@ -182,7 +185,7 @@ struct MainView_Previews: PreviewProvider {
     static var previews: some View {
         let player: StreamPlayer = {
             let player = StreamPlayer()
-            player.enqueue(Preview.tracks)
+            player.enqueue(Preview.tracks.map(MediaTrack.init))
             return player
         }()
         

@@ -33,6 +33,7 @@ final class SoundCloudProvider: MusicProvider {
     private let defaults: UserDefaults
     private let authSubject: CurrentValueSubject<AuthState, Never>
     private var subscriptions = Set<AnyCancellable>()
+    private var queuedTracks = [String: Track]()
 
     init(client: SoundCloud = SoundCloud.shared, defaults: UserDefaults = .standard) {
         self.client = client
@@ -188,28 +189,31 @@ final class SoundCloudProvider: MusicProvider {
                     print("Failed to add track to history: \(error)")
                 }
             }, receiveValue: { [weak self] track in
-                self?.didStartPlayback(of: track)
+                self?.addToHistory(track)
             })
             .store(in: &subscriptions)
     }
 
-    // MARK: - SoundCloud-typed entry points
-    // Used while the player and views still work on `SoundCloud.Track` (stage 1).
-    // They go away once the player queues `MediaTrack`s (stage 2).
+    // MARK: - Bridge to SoundCloud screens
+    // Track detail, likes and reposts are SoundCloud screens that work on `Track`,
+    // while the player queues `MediaTrack`s. The provider remembers the `Track`
+    // behind every track handed to the player, so those screens and the play
+    // history get the original back without another request.
 
-    func asset(for track: Track) -> AnyPublisher<AVURLAsset, Error> {
-        guard let url = track.streamURL else {
-            return Fail(error: NoStreamError())
-                .eraseToAnyPublisher()
-        }
+    /// Converts a track for the player and remembers the original.
+    func mediaTrack(for track: Track) -> MediaTrack {
+        queuedTracks[track.id] = track
+        return MediaTrack(track)
+    }
 
-        return client.get(.audioFile(url))
-            .map { AVURLAsset(url: $0) }
-            .eraseToAnyPublisher()
+    /// The SoundCloud track behind a queued track, if it came from SoundCloud.
+    func track(for track: MediaTrack) -> Track? {
+        guard track.provider == id else { return nil }
+        return queuedTracks[track.id.rawID]
     }
 
     /// Adds the track to the SoundCloud play history. Errors are logged, never shown.
-    func didStartPlayback(of track: Track) {
+    private func addToHistory(_ track: Track) {
         client.perform(.addToHistory(track))
             .sink(receiveCompletion: { completion in
                 if case let .failure(error) = completion {
@@ -231,6 +235,12 @@ final class SoundCloudProvider: MusicProvider {
     }
 
     private func soundCloudTrack(for track: MediaTrack) -> AnyPublisher<Track, Error> {
+        if let track = self.track(for: track) {
+            return Just(track)
+                .setFailureType(to: Error.self)
+                .eraseToAnyPublisher()
+        }
+
         let id = track.id
 
         return client.get(.tracks([id.rawID]))

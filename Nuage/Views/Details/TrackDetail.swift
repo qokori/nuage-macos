@@ -88,7 +88,7 @@ struct TrackDetail_Previews: PreviewProvider {
     static var previews: some View {
         let player: StreamPlayer = {
             let player = StreamPlayer()
-            player.enqueue(Preview.tracks)
+            player.enqueue(Preview.tracks.map(MediaTrack.init))
             
             return player
         }()

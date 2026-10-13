@@ -69,13 +69,24 @@ struct WaveformSlider<Value : BinaryFloatingPoint, MinValueLabel: View, MaxValue
                             .foregroundColor(waveformBackgroundColor)
                             .frame(width: max(0, geometry.size.width-barValue))
                     }
-                    .mask(WaveformView(url: url))
+                    .mask(track())
                     
                     knob()
                         .frame(width: knobDiameter, height: knobDiameter)
                         .offset(x: knobValue)
                 }
             }.gesture(drag)
+        }
+    }
+    
+    /// The waveform when the track has one, otherwise a plain bar.
+    @ViewBuilder private func track() -> some View {
+        if let url = url {
+            WaveformView(url: url)
+        }
+        else {
+            Capsule()
+                .frame(height: 4)
         }
     }
     

@@ -28,7 +28,7 @@ private struct TrackContextMenu: ViewModifier {
         content.contextMenu {
             Button("Play", action: onPlay)
             Button("Add to Queue") {
-                player.enqueue([track])
+                player.enqueue([ProviderRegistry.shared.soundCloud.mediaTrack(for: track)])
             }
             Divider()
             Button("Go to User") {

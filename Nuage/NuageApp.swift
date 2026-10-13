@@ -163,10 +163,13 @@ struct NuageApp: App {
                         reloadLikes()
                         reloadPosts()
                         
-                        // Whenever the current stream changes, add it to the SoundCloud history
+                        // Whenever the current stream changes, tell its provider
+                        // (SoundCloud adds it to the play history)
                         player.$currentStream
                             .compactMap { $0 }
-                            .sink { ProviderRegistry.shared.soundCloud.didStartPlayback(of: $0) }
+                            .sink { track in
+                                ProviderRegistry.shared.provider(for: track)?.didStartPlayback(of: track)
+                            }
                             .store(in: &subscriptions)
                     }
             }

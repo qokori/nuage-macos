@@ -59,6 +59,12 @@ struct MediaID: Hashable, Codable {
 
 }
 
+extension MediaID: CustomStringConvertible {
+
+    var description: String { "\(provider.rawValue):\(rawID)" }
+
+}
+
 struct MediaArtist: Identifiable, Hashable, Codable {
 
     var id: MediaID
@@ -123,6 +129,7 @@ enum PlaybackSource {
 protocol RemotePlaybackController: AnyObject {
 
     var progressPublisher: AnyPublisher<TimeInterval, Never> { get }
+    var isPlayingPublisher: AnyPublisher<Bool, Never> { get }
     var didFinishPublisher: AnyPublisher<Void, Never> { get }
 
     func play(_ track: MediaTrack)

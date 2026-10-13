@@ -2,11 +2,11 @@
 
 Work in progress: one Nuage for SoundCloud, Spotify and Yandex Music.
 
-**Status: stage 1, not built.** The app was type-checked with Command Line Tools (`Tools/typecheck.sh`:
-`swiftc -typecheck`, macOS 26.5 SDK, dependencies built with SwiftPM) with no
-errors, but it has not been linked, built in Xcode or run.
+**Status: stages 1 and 2 done, builds with Xcode 27.0.** Release build, ad-hoc
+signed (`CODE_SIGN_IDENTITY=-`, no team). SoundCloud is still the only source, so the
+remote-engine path (`.remote`) has no user yet.
 
-## Stage 1 (this branch)
+## Stage 1
 
 - `Nuage/Providers/MusicProvider.swift`: the `MusicProvider` protocol and the
   neutral `MediaTrack` / `MediaArtist` / `MediaPlaylist` models every source maps to.
@@ -15,9 +15,22 @@ errors, but it has not been linked, built in Xcode or run.
 - `Nuage/Providers/ProviderRegistry.swift`: the list of sources (SoundCloud only for now).
 - Sign-in, session restore, stream resolution and play history go through the provider.
 
+## Stage 2
+
+- `StreamPlayer` queues `MediaTrack`s and asks the track's provider for a
+  `PlaybackSource`: `.asset` plays in `AVPlayer`, `.remote` hands the track to
+  another engine (`RemotePlaybackController`) and mirrors its progress and state.
+- Now Playing, the player bar, the queue and the Touch Bar use only `MediaTrack` fields.
+- The progress bar shows a waveform only when the track has a `waveformURL`.
+- SoundCloud screens (track detail, likes, reposts) still work on `Track`;
+  `SoundCloudProvider` remembers the `Track` behind every queued track.
+- Removed the dead `StackNavigationView` package dependency and submodule entry.
+
+Build: `xcodebuild -project Nuage.xcodeproj -scheme Nuage -configuration Release
+-derivedDataPath build/DerivedData CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= build`
+
 ## Next
 
-2. Player queue on `MediaTrack`, playback engine chosen per track.
 3. Source-aware sidebar, combined search, accounts window.
 4. Yandex Music provider (unofficial API, token in Keychain).
 5. Spotify provider (Web API + controlling the Spotify app).

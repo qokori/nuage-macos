@@ -26,8 +26,7 @@ struct PlayerView: View {
     
     var body: some View {
         ZStack {
-            let url = player.currentStream?.artworkURL ?? player.currentStream?.user.avatarURL
-            RemoteImage(url: url, cornerRadius: 0)
+            RemoteImage(url: player.currentStream?.artworkURL, cornerRadius: 0)
             
             HStack {
                 Button(action: onTrackDetailTap) {
@@ -40,7 +39,7 @@ struct PlayerView: View {
                 .frame(width: 150, alignment: .leading)
                 .buttonStyle(.plain)
                 
-                FeedbackStack(for: player.currentStream, horizontal: false)
+                FeedbackStack(for: currentSoundCloudTrack, horizontal: false)
                 
                 Spacer()
                     .frame(width: 8)
@@ -62,10 +61,14 @@ struct PlayerView: View {
         .frame(height: 60)
     }
     
+    /// Likes and reposts are SoundCloud features; other sources get disabled buttons for now.
+    private var currentSoundCloudTrack: Track? {
+        return player.currentStream.flatMap(ProviderRegistry.shared.soundCloud.track(for:))
+    }
+    
     @ViewBuilder private func artwork() -> some View {
         if let track = player.currentStream {
-            let url = track.artworkURL ?? player.currentStream?.user.avatarURL
-            RemoteImage(url: url, cornerRadius: 3)
+            RemoteImage(url: track.artworkURL, cornerRadius: 3)
                 .onTapGesture(perform: onTrackDetailTap)
         }
         else {
@@ -76,7 +79,7 @@ struct PlayerView: View {
     @ViewBuilder private func trackDetails() -> some View {
         if let track = player.currentStream {
             VStack(alignment: .leading, spacing: 4) {
-                Text(track.user.username)
+                Text(track.artist.name)
                     .bold()
                     .lineLimit(1)
                 Text(track.title)
@@ -91,7 +94,7 @@ struct PlayerView: View {
     }
     
     @ViewBuilder private func progressSlider() -> some View {
-        let duration = TimeInterval(player.currentStream?.duration ?? 0)
+        let duration = player.currentStream?.duration ?? 0
         let font = Font.system(size: 14).monospacedDigit()
         
         WaveformSlider(url: player.currentStream?.waveformURL, value: $player.progress, in: 0...duration, minValueLabel: { progress in
@@ -201,15 +204,15 @@ struct PlayerView: View {
         }
     }
     
-    @ViewBuilder private func queueRows<T: RandomAccessCollection>(for tracks: T) -> some View where T.Element == Track {
+    @ViewBuilder private func queueRows<T: RandomAccessCollection>(for tracks: T) -> some View where T.Element == MediaTrack {
         ForEach(Array(tracks.enumerated()), id: \.element.id) { idx, track in
             HStack {
-                Artwork(url: track.artworkURL ?? track.user.avatarURL, onPlay: {
+                Artwork(url: track.artworkURL, onPlay: {
                     player.play(Array(tracks), from: idx)
                 })
                 .frame(width: 60, height: 60)
                 VStack(alignment: .leading) {
-                    Text(track.user.username)
+                    Text(track.artist.name)
                         .bold()
                     Text(track.title)
                         .foregroundColor(.secondary)
@@ -250,7 +253,7 @@ struct PlayerView_Previews: PreviewProvider {
     
     static var previews: some View {
         let player = StreamPlayer()
-        player.enqueue(Preview.tracks)
+        player.enqueue(Preview.tracks.map(MediaTrack.init))
         
         return PlayerView(onTrackDetailTap: {}).environmentObject(player)
     }

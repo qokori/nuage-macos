@@ -22,7 +22,7 @@ struct TouchBar: View {
                 .monospacedDigit()
             HStack {
                 VStack(alignment: .leading) {
-                    Text(track.user.username)
+                    Text(track.artist.name)
                         .bold()
                         .lineLimit(1)
                         .font(font)
@@ -38,8 +38,8 @@ struct TouchBar: View {
         }
     }
     
-    @ViewBuilder private func progressSlider(for track: Track) -> some View {
-        let duration = TimeInterval(player.currentStream?.duration ?? 0)
+    @ViewBuilder private func progressSlider(for track: MediaTrack) -> some View {
+        let duration = player.currentStream?.duration ?? 0
         let font = Font.system(size: 14).monospacedDigit()
         
         WaveformSlider(url: track.waveformURL, value: $player.progress, in: 0...duration, minValueLabel: { progress in
