@@ -83,7 +83,7 @@ private struct PlaylistCard: View {
     var playlist: AnyPlaylist
 
     var body: some View {
-        NavigationLink(value: playlist) {
+        NavigationLink(value: MediaPlaylist(playlist)) {
             VStack(alignment: .leading, spacing: 6) {
                 RemoteImage(url: playlist.artworkURL, cornerRadius: 6)
                     .frame(width: cardWidth, height: cardWidth)

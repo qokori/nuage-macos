@@ -24,6 +24,9 @@ struct InfiniteGrid<Element: Decodable&Identifiable&Filterable&Hashable, Item: V
         else if case let .array(arrayPublisher, pagePublisher) = publisher {
             ArrayView(arrayPublisher: arrayPublisher, pagePublisher: pagePublisher, content: grid)
         }
+        else if case let .all(publisher) = publisher {
+            ArrayView(arrayPublisher: publisher, pagePublisher: InfinitePublisher<Element>.slices, content: grid)
+        }
     }
     
     @ViewBuilder func grid(for elements: [Element], getNextPage: @escaping () -> ()) -> some View {

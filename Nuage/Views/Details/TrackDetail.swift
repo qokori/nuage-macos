@@ -10,17 +10,22 @@ import SwiftUI
 import Combine
 import SoundCloud
 
+/// A track from any provider. The waveform, comments and the station button
+/// appear only when the track's provider has them.
 struct TrackDetail: View {
     
-    var track: Track
+    var track: MediaTrack
     
     @State private var subscriptions = Set<AnyCancellable>()
     
     @Environment(\.onPlay) private var onPlay: () -> ()
     
+    private var capabilities: ProviderCapabilities {
+        return ProviderRegistry.shared.capabilities(of: track.provider)
+    }
+    
     var body: some View {
         let duration = format(time: track.duration)
-        let url = track.artworkURL ?? track.user.avatarURL
         
         VStack(alignment: .leading) {
             Text(track.title)
@@ -31,8 +36,8 @@ struct TrackDetail: View {
                 .frame(height: 2)
             
             HStack {
-                NavigationLink(value: track.user) {
-                    Text(track.user.username)
+                NavigationLink(value: track.artist) {
+                    Text(track.artist.name)
                         .foregroundColor(.secondary)
                         .font(.title2)
                 }
@@ -41,17 +46,21 @@ struct TrackDetail: View {
                 Spacer()
                     .frame(width: 16)
                 
-                StatsStack(for: track)
-                    .foregroundColor(.secondary)
+                if let stats = track.stats {
+                    StatsStack(for: stats)
+                        .foregroundColor(.secondary)
+                }
             }
             
             HStack(alignment: .center, spacing: 10) {
-                Artwork(url: url, onPlay: onPlay)
+                Artwork(url: track.artworkURL, onPlay: onPlay)
                     .frame(width: 100, height: 100)
                 
-                WaveformView(url: track.waveformURL)
-                    .foregroundColor(.secondary)
-                    .frame(height: 80)
+                if capabilities.contains(.waveform), let waveformURL = track.waveformURL {
+                    WaveformView(url: waveformURL)
+                        .foregroundColor(.secondary)
+                        .frame(height: 80)
+                }
             }
             
             FeedbackStack(for: track)
@@ -63,22 +72,34 @@ struct TrackDetail: View {
             
             Divider()
             
-            CommentList(for: SoundCloud.shared.get(.comments(of: track)))
-                .header {
-                    if let description = track.description {
-                        Text(description.withAttributedLinks())
-                    }
+            if capabilities.contains(.comments) {
+                CommentList(for: ProviderRegistry.shared.soundCloud.comments(of: track))
+                    .header { description() }
+            }
+            else {
+                ScrollView {
+                    description()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
+            }
         }
         .toolbar {
-            ToolbarItem(placement: .secondaryAction) {
-                NavigationLink(value: Station.track(track)) {
-                    Image(systemName: "dot.radiowaves.left.and.right")
+            if capabilities.contains(.stations) {
+                ToolbarItem(placement: .secondaryAction) {
+                    NavigationLink(value: Station.track(track)) {
+                        Image(systemName: "dot.radiowaves.left.and.right")
+                    }
                 }
             }
         }
         .padding(16)
         .navigationTitle(track.title)
+    }
+    
+    @ViewBuilder private func description() -> some View {
+        if let description = track.description {
+            Text(description.withAttributedLinks())
+        }
     }
     
 }
@@ -93,7 +114,7 @@ struct TrackDetail_Previews: PreviewProvider {
             return player
         }()
         
-        TrackDetail(track: Preview.tracks.first!)
+        TrackDetail(track: MediaTrack(Preview.tracks.first!))
             .environmentObject(player)
             .environmentObject(CommandSubject())
     }

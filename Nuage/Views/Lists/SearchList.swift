@@ -7,133 +7,122 @@
 
 import SwiftUI
 import Combine
-import SoundCloud
 
-private enum SearchSection: String {
-    case users
-    case tracks
-    case playlists
-}
-
+/// Searches every signed-in provider at once and groups the results by provider.
 struct SearchList: View {
     
-    var publisher: AnyPublisher<Page<Some>, Error>
+    var query: String
     
-    private var userPublisher: AnyPublisher<[User], Error> {
-        publisher.map { page in
-            return page.collection.compactMap { elem in
-                switch elem {
-                case .user(let user): return user
-                default: return nil
-                }
-            }
-        }
-        .eraseToAnyPublisher()
-    }
+    @ObservedObject private var registry = ProviderRegistry.shared
     
-    private var trackPublisher: AnyPublisher<[Track], Error> {
-        publisher.map { page in
-            return page.collection.compactMap { elem in
-                switch elem {
-                case .track(let track): return track
-                default: return nil
-                }
-            }
-        }
-        .eraseToAnyPublisher()
-    }
-    
-    private var playlistPublisher: AnyPublisher<[UserPlaylist], Error> {
-        publisher.map { page in
-            return page.collection.compactMap { elem in
-                switch elem {
-                case .userPlaylist(let playlist): return playlist
-                default: return nil
-                }
-            }
-        }
-        .eraseToAnyPublisher()
-    }
-    
-    @State private var users = [User]()
-    @State private var tracks = [Track]()
-    @State private var playlists = [UserPlaylist]()
-    
+    @State private var results = [ProviderID: SearchResults]()
+    @State private var pending = Set<ProviderID>()
     @State private var subscriptions = Set<AnyCancellable>()
+    
+    private var hasResults: Bool {
+        return results.values.contains { !$0.isEmpty }
+    }
     
     var body: some View {
         Group {
-            if users.isEmpty && tracks.isEmpty && playlists.isEmpty {
-                ProgressView()
-                    .progressViewStyle(.circular)
-            }
-            else {
+            if hasResults {
                 ScrollView {
                     LazyVStack(alignment: .leading) {
-                        if !users.isEmpty {
-                            Section(content: {
-                                HStack(alignment: .top) {
-                                    ForEach(users) { UserItem(user: $0) }
-                                }
-                            }, header: header(for: .users), footer: footer)
-                        }
-                        if !tracks.isEmpty {
-                            Section(content: {
-                                VStack(alignment: .leading) {
-                                    ForEach(tracks) { track in
-                                        TrackRow(track: track)
-                                            .playbackStart(at: track)
-                                    }
-                                }
-                                .playbackContext(tracks)
-                            }, header: header(for: .tracks), footer: footer)
-                        }
-                        if !playlists.isEmpty {
-                            Section(content: {
-                                VStack(alignment: .leading) {
-                                    ForEach(playlists) { playlist in
-                                        PlaylistRow(playlist: playlist)
-                                    }
-                                }
-                                .playbackContext(playlists)
-                            }, header: header(for: .playlists), footer: footer)
+                        ForEach(ProviderID.allCases) { id in
+                            if let results = results[id], !results.isEmpty {
+                                section(for: id, results: results)
+                            }
                         }
                     }
                     .padding()
                 }
             }
+            else if pending.isEmpty {
+                Text("No results for “\(query)”")
+                    .foregroundColor(.secondary)
+            }
+            else {
+                ProgressView()
+                    .progressViewStyle(.circular)
+            }
         }
         .navigationTitle("Search")
-        .onAppear {
-            userPublisher.replaceError(with: [])
-                .receive(on: RunLoop.main)
-                .assign(to: \.users, on: self)
-                .store(in: &subscriptions)
-            
-            trackPublisher.replaceError(with: [])
-                .receive(on: RunLoop.main)
-                .assign(to: \.tracks, on: self)
-                .store(in: &subscriptions)
-            
-            playlistPublisher.replaceError(with: [])
-                .receive(on: RunLoop.main)
-                .assign(to: \.playlists, on: self)
-                .store(in: &subscriptions)
-        }
+        .onAppear(perform: search)
     }
     
-    private func header(for section: SearchSection) -> () -> some View {
-        @ViewBuilder func buildHeader() -> some View {
-            Text(section.rawValue.capitalized)
-                .font(.title)
+    @ViewBuilder private func section(for id: ProviderID, results: SearchResults) -> some View {
+        HStack {
+            ProviderBadge(provider: id)
+            Text(id.displayName)
         }
-        return buildHeader
+        .font(.largeTitle)
+        
+        if !results.artists.isEmpty {
+            header("Artists")
+            ScrollView(.horizontal) {
+                HStack(alignment: .top) {
+                    ForEach(results.artists) { artist in
+                        NavigationLink(value: artist) {
+                            UserItem(artist: artist)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        if !results.tracks.isEmpty {
+            header("Tracks")
+            VStack(alignment: .leading) {
+                ForEach(results.tracks) { track in
+                    TrackRow(track: track)
+                        .playbackStart(at: track)
+                        .trackContextMenu(with: track)
+                }
+            }
+            .playbackContext(results.tracks)
+        }
+        if !results.playlists.isEmpty {
+            header("Playlists")
+            VStack(alignment: .leading) {
+                ForEach(results.playlists) { playlist in
+                    PlaylistRow(playlist: playlist)
+                }
+            }
+        }
+        footer()
+    }
+    
+    @ViewBuilder private func header(_ title: String) -> some View {
+        Text(title)
+            .font(.title)
     }
     
     @ViewBuilder private func footer() -> some View {
         Spacer(minLength: 20)
         Divider()
         Spacer(minLength: 20)
+    }
+    
+    private func search() {
+        guard pending.isEmpty, results.isEmpty else { return }
+        
+        let providers = registry.signedInProviders.filter { $0.capabilities.contains(.search) }
+        pending = Set(providers.map { $0.id })
+        
+        for provider in providers {
+            let id = provider.id
+            provider.search(query, limit: 20)
+                .receive(on: RunLoop.main)
+                .sink(receiveCompletion: { completion in
+                    if case let .failure(error) = completion {
+                        print("Failed to search \(id.displayName): \(error)")
+                    }
+                    pending.remove(id)
+                }, receiveValue: { value in
+                    results[id] = value
+                })
+                .store(in: &subscriptions)
+        }
     }
     
 }

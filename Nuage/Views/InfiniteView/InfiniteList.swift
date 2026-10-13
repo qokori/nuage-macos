@@ -14,6 +14,15 @@ import SoundCloud
 enum InfinitePublisher<Element: Decodable&Identifiable&Filterable&Hashable> {
     case page(AnyPublisher<Page<Element>, Error>)
     case array(AnyPublisher<[String], Error>, ([String]) -> AnyPublisher<[Element], Error>)
+    /// Everything at once; shown in growing slices like `.array`.
+    case all(AnyPublisher<[Element], Error>)
+    
+    /// `.all` reuses the id-paging view with the elements as their own ids.
+    static func slices(of elements: [Element]) -> AnyPublisher<[Element], Error> {
+        return Just(elements)
+            .setFailureType(to: Error.self)
+            .eraseToAnyPublisher()
+    }
 }
 
 struct InfiniteList<Element: Decodable&Identifiable&Filterable&Hashable, Row: View>: View {
@@ -33,6 +42,9 @@ struct InfiniteList<Element: Decodable&Identifiable&Filterable&Hashable, Row: Vi
         }
         else if case let .array(arrayPublisher, pagePublisher) = publisher {
             ArrayView(arrayPublisher: arrayPublisher, pagePublisher: pagePublisher, content: list)
+        }
+        else if case let .all(publisher) = publisher {
+            ArrayView(arrayPublisher: publisher, pagePublisher: InfinitePublisher<Element>.slices, content: list)
         }
     }
     

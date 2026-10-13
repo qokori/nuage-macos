@@ -157,6 +157,15 @@ extension HistoryItem: Filterable {
     
 }
 
+extension MediaTrack: Filterable {
+    
+    func contains(_ text: String) -> Bool {
+        return title.containsCaseInsensitive(text) || artist.name.containsCaseInsensitive(text)
+            || (description?.containsCaseInsensitive(text) ?? false)
+    }
+    
+}
+
 extension Recommendation: Filterable {
     
     func contains(_ text: String) -> Bool {

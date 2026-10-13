@@ -104,6 +104,25 @@ extension UserDetail {
     
 }
 
+/// An artist from any provider. Artist pages exist only on SoundCloud so far.
+struct ArtistDetail: View {
+    
+    var artist: MediaArtist
+    
+    var body: some View {
+        if ProviderRegistry.shared.capabilities(of: artist.provider).contains(.following),
+           let user = ProviderRegistry.shared.soundCloud.user(for: artist) {
+            UserDetail(user: user)
+        }
+        else {
+            Text("\(artist.provider.displayName) has no artist pages in Nuage yet.")
+                .foregroundColor(.secondary)
+                .navigationTitle(artist.name)
+        }
+    }
+    
+}
+
 struct UserDetail_Previews: PreviewProvider {
     
     static var previews: some View {

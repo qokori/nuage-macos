@@ -19,7 +19,9 @@ struct URLDetail: View {
     var body: some View {
         switch item {
         case nil: loadingIndicator()
-        case .track(let track): TrackDetail(track: track)
+        case .track(let track):
+            let track = MediaTrack(track)
+            TrackDetail(track: track)
                 .playbackContext([track])
                 .playbackStart(at: track)
         case .user(let user): UserDetail(user: user)

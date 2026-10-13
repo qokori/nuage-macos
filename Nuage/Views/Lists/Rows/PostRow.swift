@@ -42,11 +42,12 @@ struct PostRow: View {
                 .frame(height: 18)
             
             if case let .track(track) = post.item {
+                let track = MediaTrack(track)
                 TrackRow(track: track)
                     .trackContextMenu(with: track)
             }
             else if case let .playlist(playlist) = post.item {
-                PlaylistRow(playlist: playlist)
+                PlaylistRow(playlist: MediaPlaylist(.user(playlist)))
             }
         }
     }

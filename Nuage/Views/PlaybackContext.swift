@@ -8,10 +8,12 @@
 import SwiftUI
 import SoundCloud
 
-private func createOnPlay<T: SoundCloudIdentifiable>(playbackContext: [AnyHashable],
-                                               start: T,
-                                               transform: @escaping (T) -> [Track],
-                                               player: StreamPlayer) -> () -> () {
+/// Builds the queue from the elements on screen (tracks, feed posts, likes…)
+/// and starts it at `start`.
+private func createOnPlay<T: Hashable>(playbackContext: [AnyHashable],
+                                       start: T,
+                                       transform: @escaping (T) -> [MediaTrack],
+                                       player: StreamPlayer) -> () -> () {
     return {
         guard let elements = playbackContext as? [T] else {
             print("Tried to play an element of type \(T.self) in an non-matching playback context.")
@@ -23,7 +25,7 @@ private func createOnPlay<T: SoundCloudIdentifiable>(playbackContext: [AnyHashab
             return
         }
         
-        var queue = [Track]()
+        var queue = [MediaTrack]()
         var startIndex: Int?
         for elem in elements {
             if elem == start && startIndex == nil {
@@ -38,10 +40,9 @@ private func createOnPlay<T: SoundCloudIdentifiable>(playbackContext: [AnyHashab
             return
         }
         
-        let soundCloud = ProviderRegistry.shared.soundCloud
         let animation = player.queue.isEmpty ? Animation.default : nil
         withAnimation(animation) {
-            player.play(queue.map(soundCloud.mediaTrack(for:)), from: startIndex)
+            player.play(queue, from: startIndex)
         }
     }
 }
@@ -72,10 +73,10 @@ extension EnvironmentValues {
     
 }
 
-private struct PlaybackStart<T: SoundCloudIdentifiable>: ViewModifier {
+private struct PlaybackStart<T: Hashable>: ViewModifier {
     
     var element: T
-    var transform: (T) -> [Track]
+    var transform: (T) -> [MediaTrack]
     
     @Environment(\.playbackContext) private var playbackContext: [AnyHashable]
     @EnvironmentObject private var player: StreamPlayer
@@ -97,16 +98,16 @@ extension View {
         return environment(\.playbackContext, elements)
     }
     
-    func playbackStart<T: SoundCloudIdentifiable>(at element: T, transform: @escaping (T) -> [Track]) -> some View {
+    func playbackStart<T: Hashable>(at element: T, transform: @escaping (T) -> [MediaTrack]) -> some View {
         return modifier(PlaybackStart(element: element, transform: transform))
     }
     
-    func playbackStart(at track: Track) -> some View {
+    func playbackStart(at track: MediaTrack) -> some View {
         return modifier(PlaybackStart(element: track, transform: { [$0] }))
     }
     
     func playbackStart(at post: Post) -> some View {
-        return modifier(PlaybackStart(element: post, transform: { $0.tracks }))
+        return modifier(PlaybackStart(element: post, transform: { $0.tracks.map(MediaTrack.init) }))
     }
     
 }
@@ -165,8 +166,8 @@ extension NavigationPath {
     mutating func append<V>(_ value: V,
                             with playbackContext: [AnyHashable],
                             startPlaybackAt start: V,
-                            transform: @escaping (V) -> [Track],
-                            player: StreamPlayer) where V : Hashable & SoundCloudIdentifiable {
+                            transform: @escaping (V) -> [MediaTrack],
+                            player: StreamPlayer) where V : Hashable {
         let onPlay = createOnPlay(playbackContext: playbackContext,
                                   start: start,
                                   transform: transform,
@@ -175,10 +176,10 @@ extension NavigationPath {
         append(pathValue)
     }
     
-    mutating func append<V>(_ value: V,
-                            with playbackContext: [AnyHashable],
-                            startPlaybackAt start: V,
-                            player: StreamPlayer) where V == Track {
+    mutating func append(_ value: MediaTrack,
+                         with playbackContext: [AnyHashable],
+                         startPlaybackAt start: MediaTrack,
+                         player: StreamPlayer) {
         append(value,
                with: playbackContext,
                startPlaybackAt: start,

@@ -6,15 +6,15 @@
 //
 
 import SwiftUI
-import SoundCloud
 
-struct PlaylistRow<T: Playlist>: View {
+struct PlaylistRow: View {
     
-    var playlist: T
+    var playlist: MediaPlaylist
     @Environment(\.onPlay) private var onPlay: () -> ()
+    @Environment(\.showsProviderBadge) private var showsProviderBadge: Bool
     
     var body: some View {
-        let artworkURL = playlist.artworkURL ?? playlist.tracks?.first?.artworkURL
+        let artworkURL = playlist.artworkURL ?? playlist.previewTracks?.first?.artworkURL
         
         return HStack(alignment: .top, spacing: 10) {
             VStack(alignment: .leading) {
@@ -25,12 +25,23 @@ struct PlaylistRow<T: Playlist>: View {
             .padding(.bottom, 16)
             
             VStack(alignment: .leading) {
-                Text(playlist.title)
-                    .font(.title3)
-                    .bold()
-                    .lineLimit(1)
-                NavigationLink(playlist.user.username, value: playlist.user)
-                    .buttonStyle(.plain)
+                NavigationLink(value: playlist) {
+                    Text(playlist.title)
+                        .font(.title3)
+                        .bold()
+                        .lineLimit(1)
+                }
+                .buttonStyle(.plain)
+                HStack(spacing: 6) {
+                    if showsProviderBadge {
+                        ProviderBadge(provider: playlist.provider)
+                            .foregroundColor(.secondary)
+                    }
+                    if let owner = playlist.owner {
+                        NavigationLink(owner.name, value: owner)
+                            .buttonStyle(.plain)
+                    }
+                }
                 Spacer()
                     .frame(height: 8)
 
@@ -43,12 +54,14 @@ struct PlaylistRow<T: Playlist>: View {
                     Text(text).lineLimit(3)
                 }
                 
-                if let tracks = playlist.tracks {
+                if let tracks = playlist.previewTracks {
                     ForEach(tracks) { track in
                         Divider()
                         HStack {
                             Text(track.title)
-                            StatsStack(for: track)
+                            if let stats = track.stats {
+                                StatsStack(for: stats)
+                            }
                         }
                     }
                     .foregroundColor(.secondary)

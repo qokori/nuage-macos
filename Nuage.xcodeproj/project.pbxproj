@@ -52,6 +52,8 @@
 		A1C0DE0000000000000000B1 /* MusicProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000A1 /* MusicProvider.swift */; };
 		A1C0DE0000000000000000B2 /* SoundCloudProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000A2 /* SoundCloudProvider.swift */; };
 		A1C0DE0000000000000000B3 /* ProviderRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000A3 /* ProviderRegistry.swift */; };
+		A1C0DE0000000000000000B4 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000A4 /* Library.swift */; };
+		A1C0DE0000000000000000B5 /* AccountsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000A5 /* AccountsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -100,6 +102,8 @@
 		A1C0DE0000000000000000A1 /* MusicProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicProvider.swift; sourceTree = "<group>"; };
 		A1C0DE0000000000000000A2 /* SoundCloudProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundCloudProvider.swift; sourceTree = "<group>"; };
 		A1C0DE0000000000000000A3 /* ProviderRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderRegistry.swift; sourceTree = "<group>"; };
+		A1C0DE0000000000000000A4 /* Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
+		A1C0DE0000000000000000A5 /* AccountsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -217,6 +221,7 @@
 				A1C0DE0000000000000000A1 /* MusicProvider.swift */,
 				A1C0DE0000000000000000A2 /* SoundCloudProvider.swift */,
 				A1C0DE0000000000000000A3 /* ProviderRegistry.swift */,
+				A1C0DE0000000000000000A4 /* Library.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -234,6 +239,7 @@
 				4969F416257CFB100048E29B /* TrackContextMenu.swift */,
 				49D0E7F62A7A4B7500F2351C /* PlaybackContext.swift */,
 				4969F413257CFB100048E29B /* LoginView.swift */,
+				A1C0DE0000000000000000A5 /* AccountsView.swift */,
 				4969F419257CFB100048E29B /* PlayerView.swift */,
 				4969F41C257CFB100048E29B /* UserGrid.swift */,
 				49E6259C25BE1E7E005BEF8C /* WebView.swift */,
@@ -347,6 +353,8 @@
 				A1C0DE0000000000000000B1 /* MusicProvider.swift in Sources */,
 				A1C0DE0000000000000000B2 /* SoundCloudProvider.swift in Sources */,
 				A1C0DE0000000000000000B3 /* ProviderRegistry.swift in Sources */,
+				A1C0DE0000000000000000B4 /* Library.swift in Sources */,
+				A1C0DE0000000000000000B5 /* AccountsView.swift in Sources */,
 				49FEEBDF2A5B56C9002C8865 /* TouchBar.swift in Sources */,
 				4969F434257CFB100048E29B /* PlayerView.swift in Sources */,
 				497F43B228F757DA0090CAD6 /* WaveformSlider.swift in Sources */,

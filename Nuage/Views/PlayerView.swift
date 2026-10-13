@@ -39,7 +39,7 @@ struct PlayerView: View {
                 .frame(width: 150, alignment: .leading)
                 .buttonStyle(.plain)
                 
-                FeedbackStack(for: currentSoundCloudTrack, horizontal: false)
+                FeedbackStack(for: player.currentStream, horizontal: false)
                 
                 Spacer()
                     .frame(width: 8)
@@ -59,11 +59,6 @@ struct PlayerView: View {
             .background(.thinMaterial)
         }
         .frame(height: 60)
-    }
-    
-    /// Likes and reposts are SoundCloud features; other sources get disabled buttons for now.
-    private var currentSoundCloudTrack: Track? {
-        return player.currentStream.flatMap(ProviderRegistry.shared.soundCloud.track(for:))
     }
     
     @ViewBuilder private func artwork() -> some View {

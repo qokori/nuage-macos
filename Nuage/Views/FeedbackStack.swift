@@ -6,78 +6,44 @@
 //
 
 import SwiftUI
-import SoundCloud
 
-struct FeedbackStack<T: SoundCloudIdentifiable>: View {
+/// Like and repost buttons for a track or a playlist. Each button appears only
+/// when the item's provider supports it.
+struct FeedbackStack: View {
     
-    private var item: T?
+    private enum Item {
+        case track(MediaTrack)
+        case playlist(MediaPlaylist)
+    }
+    
+    private var item: Item?
+    private var provider: ProviderID?
     private var horizontal: Bool
     
+    @EnvironmentObject private var library: Library
+    
+    private var capabilities: ProviderCapabilities {
+        return provider.map(ProviderRegistry.shared.capabilities(of:)) ?? []
+    }
+    
     private var isLiked: Bool {
-        if let track = item as? Track {
-            return likes.contains(track)
-        }
-        else if let playlist = item as? (any Playlist) {
-            return playlists.contains(playlist.eraseToAnyPlaylist())
-        }
-        else {
-            return false
+        switch item {
+        case .track(let track): return library.isLiked(track)
+        case .playlist(let playlist): return library.isLiked(playlist)
+        case nil: return false
         }
     }
     
+    /// `nil` when the item cannot be reposted.
     private var isRepost: Bool? {
-        if let track = item as? Track {
-            return posts
-                .filter { $0.isTrack && $0.isRepost }
-                .map { $0.tracks.first! }
-                .contains(track)
-        }
-        else if let playlist = item as? (any Playlist) {
-            guard let playlist = playlist as? UserPlaylist else {
-                return nil
-            }
-            return posts
-                .filter { !$0.isTrack && $0.isRepost}
-                .compactMap { $0.playlist }
-                .contains(playlist)
-        }
-        else {
-            return false
+        guard capabilities.contains(.reposts) else { return nil }
+        
+        switch item {
+        case .track(let track): return library.isReposted(track.id)
+        case .playlist(let playlist): return playlist.isSystem ? nil : library.isReposted(playlist.id)
+        case nil: return false
         }
     }
-    
-    private var toggleLike: () -> () {
-        if let track = item as? Track {
-            return toggleLikeTrack(track)
-        }
-        else if let playlist = item as? (any Playlist) {
-            return toggleLikePlaylist(playlist.eraseToAnyPlaylist())
-        }
-        else {
-            return {}
-        }
-    }
-    
-    private var toggleRepost: () -> () {
-        if let track = item as? Track {
-            return toggleRepostTrack(track)
-        }
-        else if let playlist = item as? UserPlaylist {
-            return toggleRepostPlaylist(playlist)
-        }
-        else {
-            return {}
-        }
-    }
-    
-    @Environment(\.likes) private var likes: [Track]
-    @Environment(\.playlists) private var playlists: [AnyPlaylist]
-    @Environment(\.posts) private var posts: [Post]
-    
-    @Environment(\.toggleLikeTrack) private var toggleLikeTrack: (Track) -> () -> ()
-    @Environment(\.toggleRepostTrack) private var toggleRepostTrack: (Track) -> () -> ()
-    @Environment(\.toggleLikePlaylist) private var toggleLikePlaylist: (AnyPlaylist) -> () -> ()
-    @Environment(\.toggleRepostPlaylist) private var toggleRepostPlaylist: (UserPlaylist) -> () -> ()
     
     var body: some View {
         if horizontal {
@@ -89,12 +55,14 @@ struct FeedbackStack<T: SoundCloudIdentifiable>: View {
     }
     
     @ViewBuilder private func content() -> some View {
-        Button(action: toggleLike) {
-            let name = isLiked ? "heart.fill" : "heart"
-            Image(systemName: name)
+        if provider == nil || capabilities.contains(.toggleLike) {
+            Button(action: toggleLike) {
+                let name = isLiked ? "heart.fill" : "heart"
+                Image(systemName: name)
+            }
+            .disabled(item == nil)
+            .buttonStyle(.borderless)
         }
-        .disabled(item == nil)
-        .buttonStyle(.borderless)
 
         if let isRepost = isRepost {
             Button(action: toggleRepost) {
@@ -106,20 +74,31 @@ struct FeedbackStack<T: SoundCloudIdentifiable>: View {
         }
     }
     
-    @ViewBuilder private func resizableImage(name: String, height: CGFloat? = 16, width: CGFloat? = 16) -> some View {
-        Image(systemName: name)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(width: width, height: height)
+    private func toggleLike() {
+        switch item {
+        case .track(let track): library.toggleLike(track)
+        case .playlist(let playlist): library.toggleLike(playlist)
+        case nil: break
+        }
     }
     
-    init(for playlist: T, horizontal: Bool = true) where T: Playlist {
-        self.item = playlist
+    private func toggleRepost() {
+        switch item {
+        case .track(let track): library.toggleRepost(track)
+        case .playlist(let playlist): library.toggleRepost(playlist)
+        case nil: break
+        }
+    }
+    
+    init(for playlist: MediaPlaylist, horizontal: Bool = true) {
+        self.item = .playlist(playlist)
+        self.provider = playlist.provider
         self.horizontal = horizontal
     }
     
-    init(for track: T?, horizontal: Bool = true) where T == Track {
-        self.item = track
+    init(for track: MediaTrack?, horizontal: Bool = true) {
+        self.item = track.map { .track($0) }
+        self.provider = track?.provider
         self.horizontal = horizontal
     }
     

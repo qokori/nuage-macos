@@ -6,31 +6,31 @@
 //
 
 import SwiftUI
-import SoundCloud
 
+/// Play, like and repost counters; a counter the service does not send is left out.
 struct StatsStack: View {
     
-    private var track: Track
+    private var stats: MediaStats
     
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: "play.fill")
-            Text(format(count: track.playbackCount))
-            
-            Spacer().frame(width: 2)
-            
-            Image(systemName: "heart.fill")
-            Text(format(count: track.likeCount))
-            
-            Spacer().frame(width: 2)
-            
-            Image(systemName: "arrow.triangle.2.circlepath")
-            Text(format(count: track.repostCount))
+            counter(stats.plays, imageName: "play.fill")
+            counter(stats.likes, imageName: "heart.fill")
+            counter(stats.reposts, imageName: "arrow.triangle.2.circlepath")
         }
     }
     
-    init(for track: Track) {
-        self.track = track
+    @ViewBuilder private func counter(_ count: Int?, imageName: String) -> some View {
+        if let count = count {
+            Image(systemName: imageName)
+            Text(format(count: count))
+            
+            Spacer().frame(width: 2)
+        }
+    }
+    
+    init(for stats: MediaStats) {
+        self.stats = stats
     }
     
 }

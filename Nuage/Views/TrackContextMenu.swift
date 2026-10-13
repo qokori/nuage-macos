@@ -7,67 +7,53 @@
 //
 
 import SwiftUI
-import Combine
-import SoundCloud
 
+/// Play, queue, like, repost, add to playlist and copy link. Entries the
+/// track's provider does not support are left out.
 private struct TrackContextMenu: ViewModifier {
     
-    @ObservedObject private var soundCloud = SoundCloud.shared
-    
-    var track: Track
-    
-    @State private var subscriptions = Set<AnyCancellable>()
+    var track: MediaTrack
     
     @EnvironmentObject private var player: StreamPlayer
-    @Environment(\.playlists) private var playlists: [AnyPlaylist]
-    @Environment(\.toggleLikeTrack) private var toggleLike: (Track) -> () -> ()
-    @Environment(\.toggleRepostTrack) private var toggleRepost: (Track) -> () -> ()
+    @EnvironmentObject private var library: Library
     @Environment(\.onPlay) private var onPlay: () -> ()
     
     func body(content: Content) -> some View {
+        let capabilities = ProviderRegistry.shared.capabilities(of: track.provider)
+        
         content.contextMenu {
             Button("Play", action: onPlay)
             Button("Add to Queue") {
-                player.enqueue([ProviderRegistry.shared.soundCloud.mediaTrack(for: track)])
+                player.enqueue([track])
             }
             Divider()
-            Button("Go to User") {
-                print("haha")
-            }
-            Divider()
-            Button("Like", action: toggleLike(track))
-            Button("Repost", action: toggleRepost(track))
-            Menu("Add to Playlist") {
-                Button("New Playlist") {
-                    print("new playlist lel")
+            if capabilities.contains(.toggleLike) {
+                Button(library.isLiked(track) ? "Unlike" : "Like") {
+                    library.toggleLike(track)
                 }
-
-                let playlists = playlists
-                    .compactMap { $0.userPlaylist }
-                    .filter { $0.secretToken != nil }
-                if playlists.count > 0 {
-                    Divider()
-                    ForEach(playlists, id: \.id) { playlist in
+            }
+            if capabilities.contains(.reposts) {
+                Button(library.isReposted(track.id) ? "Remove Repost" : "Repost") {
+                    library.toggleRepost(track)
+                }
+            }
+            
+            let playlists = library.editablePlaylists(of: track.provider)
+            if !playlists.isEmpty {
+                Menu("Add to Playlist") {
+                    ForEach(playlists) { playlist in
                         Button(playlist.title) {
-                            let newTrackID = Int(track.id)!
-                            
-                            soundCloud.get(.userPlaylist(playlist.id))
-                                .map { ($0.trackIDs ?? []).map { Int($0)! } }
-                                .flatMap { soundCloud.get(.set(playlist, trackIDs: $0 + [newTrackID])) }
-                                .receive(on: RunLoop.main)
-                                .sink(receiveCompletion: { _ in
-                                }, receiveValue: { success in
-                                    print("added track to playlist: \(success)")
-                                }).store(in: &subscriptions)
+                            library.add(track, to: playlist)
                         }
                     }
                 }
             }
-            Divider()
-            Button("Copy Link") {
-                let text = track.permalinkURL.absoluteString
-                NSPasteboard.general.declareTypes([.string], owner: nil)
-                NSPasteboard.general.setString(text, forType: .string)
+            if let url = track.permalinkURL {
+                Divider()
+                Button("Copy Link") {
+                    NSPasteboard.general.declareTypes([.string], owner: nil)
+                    NSPasteboard.general.setString(url.absoluteString, forType: .string)
+                }
             }
         }
     }
@@ -76,7 +62,7 @@ private struct TrackContextMenu: ViewModifier {
 
 extension View {
     
-    func trackContextMenu(with track: Track) -> some View {
+    func trackContextMenu(with track: MediaTrack) -> some View {
         return modifier(TrackContextMenu(track: track))
     }
     

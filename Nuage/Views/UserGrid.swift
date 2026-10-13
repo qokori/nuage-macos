@@ -43,31 +43,40 @@ extension UserGrid where Element == Recommendation {
     
 }
 
+/// An artist's avatar, name and counters; counters the service does not send show as 0.
 struct UserItem: View {
     
-    var user: User
+    var artist: MediaArtist
     
     var body: some View {
         VStack(alignment: .center) {
-            RemoteImage(url: user.avatarURL, cornerRadius: 50)
+            RemoteImage(url: artist.avatarURL, cornerRadius: 50)
                 .frame(width: 100, height: 100)
             
-            Text(user.username)
+            Text(artist.name)
                 .bold()
                 .lineLimit(1)
             
             HStack(spacing: 2) {
-                Text(format(count: user.followerCount ?? 0))
+                Text(format(count: artist.followerCount ?? 0))
                 Image(systemName: "person.2.fill")
                 
                 Spacer()
                     .frame(width: 8)
                 
-                Text(format(count: user.trackCount ?? 0))
+                Text(format(count: artist.trackCount ?? 0))
                 Image(systemName: "waveform")
             }
             .foregroundColor(.secondary)
         }
+    }
+    
+    init(artist: MediaArtist) {
+        self.artist = artist
+    }
+    
+    init(user: User) {
+        self.artist = MediaArtist(user)
     }
 
 }
