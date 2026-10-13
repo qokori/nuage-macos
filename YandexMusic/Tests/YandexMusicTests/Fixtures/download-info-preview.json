@@ -1,0 +1,6 @@
+{
+  "invocationInfo": {"hostname": "fixture", "req-id": "fixture-15"},
+  "result": [
+    {"codec": "mp3", "gain": false, "preview": true, "downloadInfoUrl": "https://storage.mds.yandex.net/download-info/fixture/preview-mp3?sign=fixture", "direct": false, "bitrateInKbps": 128}
+  ]
+}

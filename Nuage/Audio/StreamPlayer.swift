@@ -38,6 +38,8 @@ class StreamPlayer: ObservableObject {
     }
     
     @Published private(set) var currentStream: MediaTrack?
+    /// Why the current track does not play, or plays only in part (a 30-second preview).
+    @Published private(set) var playbackNotice: String?
     
     @AppStorage("shuffleQueue") var shuffleQueue: Bool = false {
         didSet {
@@ -168,6 +170,7 @@ class StreamPlayer: ObservableObject {
             self.shouldSeek = true
             
             let track = currentStream!
+            playbackNotice = nil
             guard let provider = providers.provider(for: track) else {
                 print("Failed to stream track: no provider for \(track.provider.displayName)")
                 return
@@ -175,12 +178,15 @@ class StreamPlayer: ObservableObject {
             
             provider.playbackSource(for: track)
                 .receive(on: RunLoop.main)
-                .sink(receiveCompletion: { completion in
+                .sink(receiveCompletion: { [weak self] completion in
                     if case let .failure(error) = completion  {
                         print("Failed to stream track: \(error)")
+                        guard let self = self, self.currentStream == track else { return }
+                        self.playbackNotice = "Can't play: \(error.localizedDescription)"
                     }
                 }, receiveValue: { [weak self] source in
                     guard let self = self, self.currentStream == track else { return }
+                    self.playbackNotice = provider.accountNotice
                     self.start(source, for: track)
                 }).store(in: &subscriptions)
         }

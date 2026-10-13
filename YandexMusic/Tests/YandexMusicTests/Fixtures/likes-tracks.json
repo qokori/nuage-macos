@@ -1,0 +1,15 @@
+{
+  "invocationInfo": {"hostname": "fixture", "req-id": "fixture-6"},
+  "result": {
+    "library": {
+      "uid": 1130000001,
+      "revision": 42,
+      "playlistUuid": "00000000-0000-0000-0000-000000000000",
+      "tracks": [
+        {"id": "10994777", "albumId": "1193829", "timestamp": "2026-10-12T10:00:00+00:00"},
+        {"id": "33311009", "albumId": "4766", "timestamp": "2026-10-01T10:00:00+00:00"},
+        {"id": "8f2c1e9a-uuid-ugc", "timestamp": "2026-09-01T10:00:00+00:00"}
+      ]
+    }
+  }
+}

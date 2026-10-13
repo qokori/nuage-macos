@@ -2,8 +2,8 @@
 //  MusicProvider.swift
 //  Nuage
 //
-//  Multi-source seam. Every music service (SoundCloud now, Spotify and
-//  Yandex Music later) sits behind `MusicProvider`. Shared UI and the player
+//  Multi-source seam. Every music service (SoundCloud and Yandex Music now,
+//  Spotify later) sits behind `MusicProvider`. Shared UI and the player
 //  talk to services through the neutral `Media*` models below, never through
 //  a service's own API types.
 //
@@ -210,6 +210,9 @@ protocol MusicProvider: AnyObject {
     /// Restores a saved session at launch. Returns `true` when the provider is signed in.
     @discardableResult func restoreSession() -> Bool
     func signOut()
+    /// A problem with the account to show in Accounts and the player
+    /// (a rejected token, no subscription). `nil` when all is well.
+    var accountNotice: String? { get }
 
     // MARK: Catalog and library
 
@@ -236,6 +239,8 @@ extension MusicProvider {
     var displayName: String { id.displayName }
 
     var isSignedIn: Bool { authState.isSignedIn }
+
+    var accountNotice: String? { nil }
 
     func didStartPlayback(of track: MediaTrack) {}
 

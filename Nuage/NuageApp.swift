@@ -82,9 +82,14 @@ struct NuageApp: App {
                     }
             }
             else {
-                // Nothing to show without an account; SoundCloud is the only service so far.
+                // Nothing to show without an account: SoundCloud's web login,
+                // with a way to the other services in Settings → Accounts.
                 LoginView { accessToken, expiryDate in
                     ProviderRegistry.shared.soundCloud.signIn(accessToken: accessToken, expiryDate: expiryDate)
+                }
+                .safeAreaInset(edge: .bottom) {
+                    OtherAccountsLink()
+                        .padding(8)
                 }
             }
         }

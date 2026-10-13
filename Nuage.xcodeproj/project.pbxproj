@@ -54,6 +54,9 @@
 		A1C0DE0000000000000000B3 /* ProviderRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000A3 /* ProviderRegistry.swift */; };
 		A1C0DE0000000000000000B4 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000A4 /* Library.swift */; };
 		A1C0DE0000000000000000B5 /* AccountsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000A5 /* AccountsView.swift */; };
+		A1C0DE0000000000000000B6 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000A6 /* Keychain.swift */; };
+		A1C0DE0000000000000000B7 /* YandexMusicProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000A7 /* YandexMusicProvider.swift */; };
+		A1C0DE0000000000000000D1 /* YandexMusic in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0DE0000000000000000E1 /* YandexMusic */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -104,6 +107,9 @@
 		A1C0DE0000000000000000A3 /* ProviderRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderRegistry.swift; sourceTree = "<group>"; };
 		A1C0DE0000000000000000A4 /* Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
 		A1C0DE0000000000000000A5 /* AccountsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountsView.swift; sourceTree = "<group>"; };
+		A1C0DE0000000000000000A6 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
+		A1C0DE0000000000000000A7 /* YandexMusicProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YandexMusicProvider.swift; sourceTree = "<group>"; };
+		A1C0DE0000000000000000F1 /* YandexMusic */ = {isa = PBXFileReference; lastKnownFileType = folder; path = YandexMusic; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +119,7 @@
 			files = (
 				498286F825969AE800147DBE /* Introspect in Frameworks */,
 				49328ECF25C4B71500A2A34D /* SoundCloud in Frameworks */,
+				A1C0DE0000000000000000D1 /* YandexMusic in Frameworks */,
 				49B154C525C4685D00CE9511 /* URLImage in Frameworks */,
 				4980FD4025CD704E004640D5 /* GridStack in Frameworks */,
 			);
@@ -166,6 +173,7 @@
 			isa = PBXGroup;
 			children = (
 				49328EC625C4B6F900A2A34D /* SoundCloud */,
+				A1C0DE0000000000000000F1 /* YandexMusic */,
 				4969F3C7257CFA7F0048E29B /* Nuage */,
 				4969F3C6257CFA7F0048E29B /* Products */,
 				49328EB325C4B57D00A2A34D /* Frameworks */,
@@ -222,6 +230,8 @@
 				A1C0DE0000000000000000A2 /* SoundCloudProvider.swift */,
 				A1C0DE0000000000000000A3 /* ProviderRegistry.swift */,
 				A1C0DE0000000000000000A4 /* Library.swift */,
+				A1C0DE0000000000000000A6 /* Keychain.swift */,
+				A1C0DE0000000000000000A7 /* YandexMusicProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -277,12 +287,14 @@
 			);
 			dependencies = (
 				49328ECB25C4B70F00A2A34D /* PBXTargetDependency */,
+				A1C0DE0000000000000000D2 /* PBXTargetDependency */,
 			);
 			name = Nuage;
 			packageProductDependencies = (
 				498286F725969AE800147DBE /* Introspect */,
 				49B154C425C4685D00CE9511 /* URLImage */,
 				49328ECE25C4B71500A2A34D /* SoundCloud */,
+				A1C0DE0000000000000000E1 /* YandexMusic */,
 				4980FD3F25CD704E004640D5 /* GridStack */,
 			);
 			productName = Nuage;
@@ -355,6 +367,8 @@
 				A1C0DE0000000000000000B3 /* ProviderRegistry.swift in Sources */,
 				A1C0DE0000000000000000B4 /* Library.swift in Sources */,
 				A1C0DE0000000000000000B5 /* AccountsView.swift in Sources */,
+				A1C0DE0000000000000000B6 /* Keychain.swift in Sources */,
+				A1C0DE0000000000000000B7 /* YandexMusicProvider.swift in Sources */,
 				49FEEBDF2A5B56C9002C8865 /* TouchBar.swift in Sources */,
 				4969F434257CFB100048E29B /* PlayerView.swift in Sources */,
 				497F43B228F757DA0090CAD6 /* WaveformSlider.swift in Sources */,
@@ -394,6 +408,10 @@
 		49328ECB25C4B70F00A2A34D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			productRef = 49328ECA25C4B70F00A2A34D /* SoundCloud */;
+		};
+		A1C0DE0000000000000000D2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = A1C0DE0000000000000000E2 /* YandexMusic */;
 		};
 /* End PBXTargetDependency section */
 
@@ -629,6 +647,14 @@
 		49328ECE25C4B71500A2A34D /* SoundCloud */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SoundCloud;
+		};
+		A1C0DE0000000000000000E1 /* YandexMusic */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = YandexMusic;
+		};
+		A1C0DE0000000000000000E2 /* YandexMusic */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = YandexMusic;
 		};
 		4980FD3F25CD704E004640D5 /* GridStack */ = {
 			isa = XCSwiftPackageProductDependency;

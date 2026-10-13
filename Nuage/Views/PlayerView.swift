@@ -81,6 +81,13 @@ struct PlayerView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .foregroundColor(.secondary)
+                if let notice = player.playbackNotice {
+                    Text(notice)
+                        .font(.caption2)
+                        .lineLimit(1)
+                        .foregroundColor(.orange)
+                        .help(notice)
+                }
             }
         }
         else {

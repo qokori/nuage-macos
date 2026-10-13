@@ -1,0 +1,7 @@
+{
+  "invocationInfo": {"hostname": "fixture", "req-id": "fixture-3"},
+  "result": {
+    "account": {"now": "2026-10-13T19:00:00+00:00", "serviceAvailable": true},
+    "permissions": {"values": [], "default": []}
+  }
+}

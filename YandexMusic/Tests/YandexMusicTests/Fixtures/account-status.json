@@ -1,0 +1,22 @@
+{
+  "invocationInfo": {"hostname": "fixture", "req-id": "fixture-1", "exec-duration-millis": 3},
+  "result": {
+    "account": {
+      "now": "2026-10-13T19:00:00+00:00",
+      "uid": 1130000001,
+      "login": "nuage.fixture",
+      "region": 225,
+      "fullName": "Fixture Listener",
+      "secondName": "Listener",
+      "firstName": "Fixture",
+      "displayName": "fixture-listener",
+      "serviceAvailable": true,
+      "hostedUser": false,
+      "registeredAt": "2019-01-01T00:00:00+00:00"
+    },
+    "permissions": {"until": "2026-11-13T00:00:00+00:00", "values": ["landing-play", "feed-play", "mix-play"], "default": ["landing-play"]},
+    "subscription": {"hadAnySubscription": true, "canStartTrial": false},
+    "plus": {"hasPlus": true, "isTutorialCompleted": true},
+    "defaultEmail": "fixture@example.invalid"
+  }
+}

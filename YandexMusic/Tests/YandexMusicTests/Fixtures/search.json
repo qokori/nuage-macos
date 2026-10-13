@@ -1,0 +1,23 @@
+{
+  "invocationInfo": {"hostname": "fixture", "req-id": "fixture-12"},
+  "result": {
+    "type": "all",
+    "page": 0,
+    "perPage": 10,
+    "text": "kino",
+    "searchRequestId": "fixture-search",
+    "misspellCorrected": false,
+    "nocorrect": false,
+    "best": {"type": "artist", "result": {"id": 79215, "name": "Kino"}},
+    "tracks": {"total": 1, "perPage": 10, "order": 0, "results": [
+      {"id": "760177", "title": "Gruppa krovi", "durationMs": 284000, "artists": [{"id": 79215, "name": "Kino"}], "albums": [{"id": 87423, "coverUri": "avatars.yandex.net/get-music-content/777/k/%%"}]}
+    ]},
+    "artists": {"total": 1, "perPage": 10, "order": 1, "results": [
+      {"id": 79215, "name": "Kino", "cover": {"type": "from-artist-photos", "uri": "avatars.yandex.net/get-music-content/888/kino/%%"}}
+    ]},
+    "albums": {"total": 1, "perPage": 10, "order": 2, "results": [{"id": 87423, "title": "Gruppa krovi"}]},
+    "playlists": {"total": 1, "perPage": 10, "order": 3, "results": [
+      {"owner": {"uid": 42, "login": "fan"}, "uid": 42, "kind": 1000, "title": "Kino best", "trackCount": 20}
+    ]}
+  }
+}

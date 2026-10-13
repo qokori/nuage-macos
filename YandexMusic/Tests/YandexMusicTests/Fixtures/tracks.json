@@ -1,0 +1,33 @@
+{
+  "invocationInfo": {"hostname": "fixture", "req-id": "fixture-7"},
+  "result": [
+    {
+      "id": "33311009",
+      "realId": "33311009",
+      "title": "Second Song",
+      "available": true,
+      "durationMs": 245000,
+      "coverUri": "avatars.yandex.net/get-music-content/111/abc.a.4766-1/%%",
+      "artists": [{"id": 9262, "name": "Artist Two", "various": false, "cover": {"type": "from-artist-photos", "uri": "avatars.yandex.net/get-music-content/222/artist2/%%"}}],
+      "albums": [{"id": 4766, "title": "Album Two", "coverUri": "avatars.yandex.net/get-music-content/111/abc.a.4766-1/%%"}]
+    },
+    {
+      "id": 10994777,
+      "realId": "10994777",
+      "title": "First Song",
+      "version": "Remastered 2011",
+      "available": true,
+      "durationMs": 182500,
+      "ogImage": "avatars.yandex.net/get-music-content/333/og/%%",
+      "artists": [{"id": "41075", "name": "Artist One"}, {"id": 41076, "name": "Guest"}],
+      "albums": [{"id": "1193829", "title": "Album One"}]
+    },
+    {
+      "id": "8f2c1e9a-uuid-ugc",
+      "title": "My Upload",
+      "durationMs": 61000,
+      "artists": [],
+      "albums": []
+    }
+  ]
+}

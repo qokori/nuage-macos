@@ -1,0 +1,9 @@
+{
+  "invocationInfo": {"hostname": "fixture", "req-id": "fixture-14"},
+  "result": [
+    {"codec": "aac", "gain": false, "preview": false, "downloadInfoUrl": "https://storage.mds.yandex.net/download-info/fixture/aac-192?sign=fixture", "direct": false, "bitrateInKbps": 192},
+    {"codec": "mp3", "gain": false, "preview": false, "downloadInfoUrl": "https://storage.mds.yandex.net/download-info/fixture/mp3-192?sign=fixture", "direct": false, "bitrateInKbps": 192},
+    {"codec": "mp3", "gain": false, "preview": false, "downloadInfoUrl": "https://storage.mds.yandex.net/download-info/fixture/mp3-320?sign=fixture", "direct": false, "bitrateInKbps": 320},
+    {"codec": "aac", "gain": false, "preview": false, "downloadInfoUrl": "https://storage.mds.yandex.net/download-info/fixture/aac-64?sign=fixture", "direct": false, "bitrateInKbps": 64}
+  ]
+}

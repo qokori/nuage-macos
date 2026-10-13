@@ -1,0 +1,8 @@
+{
+  "invocationInfo": {"hostname": "fixture", "req-id": "fixture-2"},
+  "result": {
+    "account": {"now": "2026-10-13T19:00:00+00:00", "uid": 1130000002, "login": "free.fixture", "serviceAvailable": true},
+    "permissions": {"values": [], "default": []},
+    "plus": {"hasPlus": false, "isTutorialCompleted": false}
+  }
+}

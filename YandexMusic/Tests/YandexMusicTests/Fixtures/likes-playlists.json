@@ -1,0 +1,17 @@
+{
+  "invocationInfo": {"hostname": "fixture", "req-id": "fixture-9"},
+  "result": [
+    {
+      "timestamp": "2026-09-30T00:00:00+00:00",
+      "playlist": {
+        "owner": {"uid": 503646255, "login": "music-blog", "name": "Music Blog"},
+        "uid": 503646255,
+        "kind": 2160,
+        "title": "Editors' Picks",
+        "trackCount": 50,
+        "ogImage": "avatars.yandex.net/get-music-user-playlist/666/og/%%"
+      }
+    },
+    {"timestamp": "2026-09-29T00:00:00+00:00"}
+  ]
+}

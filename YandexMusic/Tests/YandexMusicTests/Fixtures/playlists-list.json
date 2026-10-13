@@ -1,0 +1,27 @@
+{
+  "invocationInfo": {"hostname": "fixture", "req-id": "fixture-8"},
+  "result": [
+    {
+      "owner": {"uid": 1130000001, "login": "nuage.fixture", "name": "fixture-listener", "verified": false},
+      "playlistUuid": "11111111-1111-1111-1111-111111111111",
+      "available": true,
+      "uid": 1130000001,
+      "kind": 1003,
+      "title": "Road Trip",
+      "revision": 7,
+      "trackCount": 2,
+      "visibility": "public",
+      "cover": {"type": "mosaic", "itemsUri": ["avatars.yandex.net/get-music-content/444/m1/%%", "avatars.yandex.net/get-music-content/444/m2/%%"], "custom": false},
+      "created": "2025-01-01T00:00:00+00:00",
+      "modified": "2026-10-01T00:00:00+00:00"
+    },
+    {
+      "owner": {"uid": 1130000001, "login": "nuage.fixture"},
+      "uid": 1130000001,
+      "kind": 3,
+      "title": "Empty",
+      "trackCount": 0,
+      "cover": {"type": "pic", "uri": "avatars.yandex.net/get-music-user-playlist/555/pic/%%", "custom": true}
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "invocationInfo": {"hostname": "fixture", "req-id": "fixture-10"},
+  "result": {
+    "owner": {"uid": 1130000001, "login": "nuage.fixture"},
+    "uid": 1130000001,
+    "kind": 1003,
+    "title": "Road Trip",
+    "trackCount": 2,
+    "tracks": [
+      {"id": 10994777, "originalIndex": 0, "timestamp": "2026-10-01T00:00:00+00:00",
+       "track": {"id": "10994777", "title": "First Song", "durationMs": 182500, "artists": [{"id": 41075, "name": "Artist One"}], "albums": [{"id": 1193829}]}},
+      {"id": 33311009, "albumId": 4766, "originalIndex": 1, "timestamp": "2026-10-02T00:00:00+00:00"}
+    ]
+  }
+}

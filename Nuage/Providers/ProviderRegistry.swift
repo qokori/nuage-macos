@@ -2,9 +2,9 @@
 //  ProviderRegistry.swift
 //  Nuage
 //
-//  The music services the app knows about. SoundCloud is the only one so far;
-//  Spotify and Yandex Music join here when their providers exist. The Accounts
-//  window lists those as "coming soon".
+//  The music services the app knows about: SoundCloud and Yandex Music.
+//  Spotify joins here when its provider exists; until then the Accounts
+//  window lists it as "coming soon".
 //
 
 import Foundation
@@ -15,6 +15,7 @@ final class ProviderRegistry: ObservableObject {
     static let shared = ProviderRegistry()
 
     let soundCloud: SoundCloudProvider
+    let yandexMusic: YandexMusicProvider
     let providers: [any MusicProvider]
 
     /// Mirrors every provider's auth state, so views that observe the registry
@@ -23,9 +24,11 @@ final class ProviderRegistry: ObservableObject {
 
     private var subscriptions = Set<AnyCancellable>()
 
-    init(soundCloud: SoundCloudProvider = SoundCloudProvider()) {
+    init(soundCloud: SoundCloudProvider = SoundCloudProvider(),
+         yandexMusic: YandexMusicProvider = YandexMusicProvider()) {
         self.soundCloud = soundCloud
-        self.providers = [soundCloud]
+        self.yandexMusic = yandexMusic
+        self.providers = [soundCloud, yandexMusic]
 
         for provider in providers {
             let id = provider.id
