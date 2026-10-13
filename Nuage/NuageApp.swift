@@ -9,8 +9,6 @@ import SwiftUI
 import Combine
 import SoundCloud
 
-private let accessTokenKey = "accessToken"
-private let accessTokenExpiryDateKey = "accessTokenExpiryDate"
 private let userKey = "user"
 private let playlistsKey = "playlists"
 private let likesKey = "likes"
@@ -167,22 +165,14 @@ struct NuageApp: App {
                         
                         // Whenever the current stream changes, add it to the SoundCloud history
                         player.$currentStream
-                            .filter { $0 != nil}
-                            .flatMap { SoundCloud.shared.perform(.addToHistory($0!)) }
-                            .sink(receiveCompletion: { completion in
-                                if case let .failure(error) = completion {
-                                    print("Failed to add track to history: \(error)")
-                                }
-                            }, receiveValue: { _ in })
+                            .compactMap { $0 }
+                            .sink { ProviderRegistry.shared.soundCloud.didStartPlayback(of: $0) }
                             .store(in: &subscriptions)
                     }
             }
             else {
                 LoginView { accessToken, expiryDate in
-                    let defaults = UserDefaults.standard
-                    defaults.set(accessToken, forKey: accessTokenKey)
-                    defaults.set(expiryDate, forKey: accessTokenExpiryDateKey)
-                    SoundCloud.shared.accessToken = accessToken
+                    ProviderRegistry.shared.soundCloud.signIn(accessToken: accessToken, expiryDate: expiryDate)
                     loggedIn = true
                 }
             }
@@ -269,20 +259,7 @@ struct NuageApp: App {
                 print("Failed to load user from UserDefaults: \(error)")
             }
         }
-        let token = defaults.object(forKey: accessTokenKey)
-        let expiryDate = defaults.object(forKey: accessTokenExpiryDateKey)
-        
-        _loggedIn = State(initialValue: false)
-        if let token = token as? String {
-            if let exipryDate = expiryDate as? Date, exipryDate < Date() {
-                defaults.set(nil, forKey: accessTokenKey)
-                defaults.set(nil, forKey: accessTokenExpiryDateKey)
-            }
-            else {
-                SoundCloud.shared.accessToken = token
-                _loggedIn = State(initialValue: true)
-            }
-        }
+        _loggedIn = State(initialValue: ProviderRegistry.shared.soundCloud.restoreSession())
         
         if let data = defaults.data(forKey: playlistsKey) {
             playlists = try! JSONDecoder().decode([AnyPlaylist].self, from: data)

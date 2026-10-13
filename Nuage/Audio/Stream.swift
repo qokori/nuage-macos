@@ -10,15 +10,10 @@ import AVFoundation
 import Combine
 import SoundCloud
 
-struct NoStreamError: Error {}
-
 extension Track: Streamable {
     
     func prepare() -> AnyPublisher<AVURLAsset, Error> {
-        guard let url = streamURL else { return Fail(error: NoStreamError()).eraseToAnyPublisher() }
-        return SoundCloud.shared.get(.audioFile(url))
-            .map { AVURLAsset(url: $0) }
-            .eraseToAnyPublisher()
+        return ProviderRegistry.shared.soundCloud.asset(for: self)
     }
     
 }

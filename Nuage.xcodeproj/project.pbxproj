@@ -50,6 +50,9 @@
 		49FA14BB2589635800CEF925 /* ArrayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FA14BA2589635800CEF925 /* ArrayView.swift */; };
 		49FA14C62589693E00CEF925 /* InfiniteList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FA14C52589693E00CEF925 /* InfiniteList.swift */; };
 		49FEEBDF2A5B56C9002C8865 /* TouchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FEEBDE2A5B56C9002C8865 /* TouchBar.swift */; };
+		A1C0DE0000000000000000B1 /* MusicProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000A1 /* MusicProvider.swift */; };
+		A1C0DE0000000000000000B2 /* SoundCloudProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000A2 /* SoundCloudProvider.swift */; };
+		A1C0DE0000000000000000B3 /* ProviderRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000A3 /* ProviderRegistry.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -96,6 +99,9 @@
 		49FA14BA2589635800CEF925 /* ArrayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrayView.swift; sourceTree = "<group>"; };
 		49FA14C52589693E00CEF925 /* InfiniteList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfiniteList.swift; sourceTree = "<group>"; };
 		49FEEBDE2A5B56C9002C8865 /* TouchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TouchBar.swift; sourceTree = "<group>"; };
+		A1C0DE0000000000000000A1 /* MusicProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicProvider.swift; sourceTree = "<group>"; };
+		A1C0DE0000000000000000A2 /* SoundCloudProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundCloudProvider.swift; sourceTree = "<group>"; };
+		A1C0DE0000000000000000A3 /* ProviderRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderRegistry.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -179,6 +185,7 @@
 				49A99D792A7454EE001B8BCB /* Navigation.swift */,
 				4969F410257CFB100048E29B /* Views */,
 				4969F40D257CFB100048E29B /* Audio */,
+				A1C0DE0000000000000000C1 /* Providers */,
 				4969F40B257CFB100048E29B /* Helpers.swift */,
 				4969F400257CFB100048E29B /* Preview.swift */,
 				4969F3CC257CFA800048E29B /* Assets.xcassets */,
@@ -205,6 +212,16 @@
 				4969F40F257CFB100048E29B /* StreamPlayer.swift */,
 			);
 			path = Audio;
+			sourceTree = "<group>";
+		};
+		A1C0DE0000000000000000C1 /* Providers */ = {
+			isa = PBXGroup;
+			children = (
+				A1C0DE0000000000000000A1 /* MusicProvider.swift */,
+				A1C0DE0000000000000000A2 /* SoundCloudProvider.swift */,
+				A1C0DE0000000000000000A3 /* ProviderRegistry.swift */,
+			);
+			path = Providers;
 			sourceTree = "<group>";
 		};
 		4969F410257CFB100048E29B /* Views */ = {
@@ -332,6 +349,9 @@
 				49A99D7A2A7454EE001B8BCB /* Navigation.swift in Sources */,
 				49FA14BB2589635800CEF925 /* ArrayView.swift in Sources */,
 				4969F42A257CFB100048E29B /* Stream.swift in Sources */,
+				A1C0DE0000000000000000B1 /* MusicProvider.swift in Sources */,
+				A1C0DE0000000000000000B2 /* SoundCloudProvider.swift in Sources */,
+				A1C0DE0000000000000000B3 /* ProviderRegistry.swift in Sources */,
 				49FEEBDF2A5B56C9002C8865 /* TouchBar.swift in Sources */,
 				4969F434257CFB100048E29B /* PlayerView.swift in Sources */,
 				497F43B228F757DA0090CAD6 /* WaveformSlider.swift in Sources */,
