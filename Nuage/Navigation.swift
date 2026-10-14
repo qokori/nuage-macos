@@ -18,6 +18,8 @@ private let playlistPrefix = "playlist:"
 enum SidebarItem {
     case discover(ProviderID)
     case stream(ProviderID)
+    /// The provider's personal endless radio (`ProviderCapabilities.radio`).
+    case radio(ProviderID)
     case likes(ProviderID)
     case history(ProviderID)
     case following(ProviderID)
@@ -25,12 +27,12 @@ enum SidebarItem {
 
     /// The library sections of a provider, in sidebar order.
     static func sections(of provider: ProviderID) -> [SidebarItem] {
-        return [.discover(provider), .stream(provider), .likes(provider), .history(provider), .following(provider)]
+        return [.discover(provider), .stream(provider), .radio(provider), .likes(provider), .history(provider), .following(provider)]
     }
 
     var provider: ProviderID {
         switch self {
-        case .discover(let provider), .stream(let provider), .likes(let provider),
+        case .discover(let provider), .stream(let provider), .radio(let provider), .likes(let provider),
              .history(let provider), .following(let provider):
             return provider
         case .playlist(let playlist):
@@ -43,6 +45,7 @@ enum SidebarItem {
         switch self {
         case .discover: return .discover
         case .stream: return .feed
+        case .radio: return .radio
         case .likes: return .likes
         case .history: return .history
         case .following: return .following
@@ -54,6 +57,7 @@ enum SidebarItem {
         switch self {
         case .discover: return "Discover"
         case .stream: return "Stream"
+        case .radio(let provider): return provider.radioTitle
         case .likes: return "Likes"
         case .history: return "History"
         case .following: return "Following"
@@ -65,6 +69,7 @@ enum SidebarItem {
         switch self {
         case .discover: return "sparkles"
         case .stream: return "bolt.horizontal.fill"
+        case .radio: return "dot.radiowaves.left.and.right"
         case .likes: return "heart.fill"
         case .history: return "clock.fill"
         case .following: return "person.2.fill"
@@ -76,6 +81,7 @@ enum SidebarItem {
         switch self {
         case .discover: return "discover"
         case .stream: return "stream"
+        case .radio: return "radio"
         case .likes: return "likes"
         case .history: return "history"
         case .following: return "following"

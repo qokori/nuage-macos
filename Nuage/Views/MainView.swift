@@ -74,9 +74,14 @@ struct MainView: View {
         .toolbarRole(.editor)
         .toolbar(content: toolbar)
         .touchBar { TouchBar() }
-        .onChange(of: sidebarSelection) { _ in
+        .onChange(of: sidebarSelection) { item in
             navigationPath = NavigationPath()
             blockingNavigationPath = nil
+            
+            // Choosing the radio plays it; a selection restored at launch does not
+            if case .radio(let provider) = item, player.radio?.provider != provider {
+                player.playRadio(of: provider)
+            }
         }
         .onOpenURL { url in
             guard var components = URLComponents(url: url, resolvingAgainstBaseURL: true) else { return }
@@ -170,7 +175,7 @@ struct MainView: View {
                 .flatMap { SoundCloud.shared.get(.followings(of: $0!), count: 50) }
                 .eraseToAnyPublisher()
             UserGrid(for: following)
-        case .playlist:
+        case .radio, .playlist:
             EmptyView()
         }
     }
@@ -180,6 +185,8 @@ struct MainView: View {
         switch item {
         case .likes:
             TrackList(for: provider.likedTracks())
+        case .radio:
+            RadioView(provider: provider.id)
         default:
             EmptyView()
         }

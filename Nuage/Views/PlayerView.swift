@@ -39,7 +39,16 @@ struct PlayerView: View {
                 .frame(width: 150, alignment: .leading)
                 .buttonStyle(.plain)
                 
-                FeedbackStack(for: player.currentStream, horizontal: false)
+                VStack {
+                    FeedbackStack(for: player.currentStream, horizontal: false)
+                    if player.canDislikeCurrentTrack {
+                        Button(action: player.dislikeCurrentTrack) {
+                            Image(systemName: "hand.thumbsdown")
+                        }
+                        .buttonStyle(.borderless)
+                        .help("Dislike: skip it and hear less like it")
+                    }
+                }
                 
                 Spacer()
                     .frame(width: 8)
@@ -210,7 +219,13 @@ struct PlayerView: View {
         ForEach(Array(tracks.enumerated()), id: \.element.id) { idx, track in
             HStack {
                 Artwork(url: track.artworkURL, onPlay: {
-                    player.play(Array(tracks), from: idx)
+                    // A radio keeps its queue, which it goes on filling
+                    if player.radio != nil {
+                        player.jump(to: track)
+                    }
+                    else {
+                        player.play(Array(tracks), from: idx)
+                    }
                 })
                 .frame(width: 60, height: 60)
                 VStack(alignment: .leading) {

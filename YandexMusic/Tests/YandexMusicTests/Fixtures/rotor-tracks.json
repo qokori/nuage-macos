@@ -1,0 +1,14 @@
+{
+  "invocationInfo": {"hostname": "fixture", "req-id": "fixture-rotor-1"},
+  "result": {
+    "id": {"type": "user", "tag": "onyourwave"},
+    "sequence": [
+      {"type": "track", "liked": false, "track": {"id": "10994777", "title": "Wave One", "durationMs": 201000, "artists": [{"id": 3976138, "name": "Artist One"}], "albums": [{"id": 1193829, "coverUri": "avatars.yandex.net/get-music-content/fixture/%%"}]}},
+      {"type": "track", "liked": true, "track": {"id": 33311009, "title": "Wave Two", "version": "Radio Edit", "durationMs": 245000, "artists": [{"id": 9262, "name": "Artist Two"}], "albums": [{"id": 4766}]}},
+      {"type": "ad"},
+      {"type": "track", "liked": false, "track": {"id": "55500001", "title": "Wave Three", "durationMs": 180000, "artists": [], "albums": []}}
+    ],
+    "batchId": "fixture-batch-1.abcd",
+    "pumpkin": false
+  }
+}

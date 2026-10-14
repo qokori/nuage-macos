@@ -41,6 +41,21 @@ class StreamPlayer: ObservableObject {
     /// Why the current track does not play, or plays only in part (a 30-second preview).
     @Published private(set) var playbackNotice: String?
     
+    /// The radio that fills the queue while it plays (`play(_ radio:)`).
+    @Published private(set) var radio: (any RadioSession)?
+    /// Why the radio stopped or could not start.
+    @Published private(set) var radioNotice: String?
+    @Published private(set) var isLoadingRadio = false
+    /// The tracks the radio queued: only they get radio feedback and the dislike button.
+    private var radioTrackIDs = Set<MediaID>()
+    private var radioLoad: AnyCancellable?
+    /// Tells a batch from a radio load that was replaced or cancelled.
+    private var radioLoadID = 0
+    /// Play the first new track when the next batch comes: the radio just started, or its queue ran out.
+    private var resumesWithNextBatch = false
+    /// The radio track whose start was reported and whose end is still due.
+    private var reportedRadioTrack: MediaTrack?
+    
     @AppStorage("shuffleQueue") var shuffleQueue: Bool = false {
         didSet {
             // Here we have to unravel the index again
@@ -171,6 +186,8 @@ class StreamPlayer: ObservableObject {
             
             let track = currentStream!
             playbackNotice = nil
+            // The listener picked a track; a late batch must not jump past it
+            resumesWithNextBatch = false
             guard let provider = providers.provider(for: track) else {
                 print("Failed to stream track: no provider for \(track.provider.displayName)")
                 return
@@ -188,7 +205,10 @@ class StreamPlayer: ObservableObject {
                     guard let self = self, self.currentStream == track else { return }
                     self.playbackNotice = provider.accountNotice
                     self.start(source, for: track)
+                    self.reportRadioStart(of: track)
                 }).store(in: &subscriptions)
+            
+            prefetchRadioIfNeeded()
         }
     }
     
@@ -203,7 +223,7 @@ class StreamPlayer: ObservableObject {
             player.replaceCurrentItem(with: item)
             player.play()
             
-            NotificationCenter.default.addObserver(self, selector: #selector(advanceForward), name: Notification.Name.AVPlayerItemDidPlayToEndTime, object: item)
+            NotificationCenter.default.addObserver(self, selector: #selector(currentTrackDidFinish), name: Notification.Name.AVPlayerItemDidPlayToEndTime, object: item)
         case .remote(let controller):
             player.replaceCurrentItem(with: nil)
             attach(controller)
@@ -239,7 +259,7 @@ class StreamPlayer: ObservableObject {
         
         controller.didFinishPublisher
             .receive(on: RunLoop.main)
-            .sink { [weak self] in self?.advanceForward() }
+            .sink { [weak self] in self?.currentTrackDidFinish() }
             .store(in: &remoteSubscriptions)
     }
     
@@ -265,6 +285,7 @@ class StreamPlayer: ObservableObject {
             return
         }
         
+        endRadio()
         pause()
         queue = tracks
         
@@ -274,11 +295,29 @@ class StreamPlayer: ObservableObject {
         resume(from: start)
     }
     
-    @objc func advanceForward() {
+    /// The next track, at the listener's request: a skip for the radio.
+    func advanceForward() {
+        reportRadioTrackEnd(finished: false)
+        moveForward()
+    }
+    
+    /// The current track played to its end.
+    @objc private func currentTrackDidFinish() {
+        reportRadioTrackEnd(finished: true)
+        moveForward()
+    }
+    
+    private func moveForward() {
         guard let idx = currentStreamIndex else { return }
         player.replaceCurrentItem(with: nil)
         if queue.count > idx + 1 {
             resume(from: idx + 1)
+        }
+        else if radio != nil {
+            // The next batch is late: it starts playing when it comes
+            pause()
+            resumesWithNextBatch = true
+            loadRadioBatch()
         }
         else if repeatQueue {
             resume(from: 0)
@@ -293,6 +332,7 @@ class StreamPlayer: ObservableObject {
         guard let idx = currentStreamIndex else { return }
         
         if currentTime < 15 {
+            reportRadioTrackEnd(finished: false)
             player.replaceCurrentItem(with: nil)
             if idx > 0 {
                 resume(from: idx - 1)
@@ -314,7 +354,22 @@ class StreamPlayer: ObservableObject {
         progress -= 15
     }
     
+    /// Plays a track that is in the queue already, keeping the queue and the radio.
+    func jump(to track: MediaTrack) {
+        guard let position = queue.firstIndex(of: track),
+              let idx = queueOrder.firstIndex(of: position) else { return }
+        guard idx != currentStreamIndex else {
+            restartPlayback()
+            return
+        }
+        
+        reportRadioTrackEnd(finished: false)
+        player.replaceCurrentItem(with: nil)
+        resume(from: idx)
+    }
+    
     func reset() {
+        endRadio()
         pause()
         player.replaceCurrentItem(with: nil)
         detachRemote()
@@ -325,7 +380,11 @@ class StreamPlayer: ObservableObject {
     func enqueue(_ streams: [MediaTrack], playNext: Bool = false) {
         guard streams.count > 0 else { return }
         
-        if playNext {
+        if playNext, radio != nil, let idx = currentStreamIndex {
+            // A radio plays in queue order, so "next" is right after the current track
+            queue.insert(contentsOf: streams, at: idx + 1)
+        }
+        else if playNext {
             queue = streams + queue
         }
         else {
@@ -335,8 +394,142 @@ class StreamPlayer: ObservableObject {
     
     private func reloadQueueOrder() {
         queueOrder = Array(0..<queue.count)
-        if shuffleQueue {
+        // A radio's queue grows at the end and plays in order
+        if shuffleQueue && radio == nil {
             queueOrder = queueOrder.shuffled()
+        }
+    }
+    
+    // MARK: - Radio
+    
+    /// Plays an endless radio: its first batch becomes the queue, and the next batch
+    /// is fetched before the queue runs out. Playing anything else ends the radio.
+    func play(_ radio: any RadioSession) {
+        reset()
+        self.radio = radio
+        resumesWithNextBatch = true
+        loadRadioBatch()
+    }
+    
+    /// Starts a new session of the provider's radio; does nothing while the provider has none.
+    func playRadio(of provider: ProviderID) {
+        guard let radio = providers.provider(for: provider)?.radio() else { return }
+        play(radio)
+    }
+    
+    /// The current track came from the radio, so the radio can be told it is not wanted.
+    var canDislikeCurrentTrack: Bool {
+        guard let radio = radio, radio.isActive, let track = currentStream else { return false }
+        return radioTrackIDs.contains(track.id)
+    }
+    
+    /// Tells the radio the listener does not want the current track, and moves on.
+    func dislikeCurrentTrack() {
+        guard canDislikeCurrentTrack, let radio = radio, let track = currentStream else { return }
+        
+        // The dislike counts as the skip
+        if reportedRadioTrack == track {
+            reportedRadioTrack = nil
+        }
+        radio.dislike(track, playedSeconds: currentTime)
+        moveForward()
+    }
+    
+    private func endRadio() {
+        reportRadioTrackEnd(finished: false)
+        radio = nil
+        radioNotice = nil
+        isLoadingRadio = false
+        radioLoad = nil
+        radioLoadID += 1
+        radioTrackIDs = []
+        resumesWithNextBatch = false
+    }
+    
+    /// Fetches the next batch once two tracks or fewer are left.
+    private func prefetchRadioIfNeeded() {
+        guard radio != nil, let idx = currentStreamIndex, queue.count - idx <= 2 else { return }
+        loadRadioBatch()
+    }
+    
+    private func loadRadioBatch() {
+        guard let radio = radio, radioLoad == nil else { return }
+        
+        radioLoadID += 1
+        let loadID = radioLoadID
+        let last = queue.last { radioTrackIDs.contains($0.id) }
+        isLoadingRadio = true
+        
+        radioLoad = radio.nextBatch(after: last)
+            .receive(on: RunLoop.main)
+            .sink(receiveCompletion: { [weak self] completion in
+                guard let self = self, self.radioLoadID == loadID else { return }
+                self.radioLoad = nil
+                self.isLoadingRadio = false
+                if case let .failure(error) = completion {
+                    print("Failed to load \(radio.title): \(error)")
+                    // Next or Start Over tries again
+                    self.resumesWithNextBatch = false
+                    if error is RadioEndedError {
+                        // The queued tracks play on, without the radio
+                        self.endRadio()
+                    }
+                    self.radioNotice = "\(radio.title) stopped: \(error.localizedDescription)"
+                }
+            }, receiveValue: { [weak self] tracks in
+                guard let self = self, self.radioLoadID == loadID else { return }
+                // Done before the tracks go in, so starting one can ask for the batch after
+                self.radioLoad = nil
+                self.radioLoadID += 1
+                self.isLoadingRadio = false
+                self.appendRadioTracks(tracks, from: radio)
+            })
+    }
+    
+    private func appendRadioTracks(_ tracks: [MediaTrack], from radio: any RadioSession) {
+        var seen = Set(queue.map { $0.id })
+        let fresh = tracks.filter { seen.insert($0.id).inserted }
+        
+        guard !fresh.isEmpty else {
+            if resumesWithNextBatch {
+                resumesWithNextBatch = false
+                radioNotice = "\(radio.title) sent no new tracks. Try again later."
+            }
+            return
+        }
+        
+        radioNotice = nil
+        radioTrackIDs.formUnion(fresh.map { $0.id })
+        let next = currentStreamIndex.map { $0 + 1 } ?? 0
+        queue += fresh
+        
+        if resumesWithNextBatch {
+            resumesWithNextBatch = false
+            resume(from: next)
+        }
+    }
+    
+    private func reportRadioStart(of track: MediaTrack) {
+        guard let radio = radio, radioTrackIDs.contains(track.id) else { return }
+        
+        if reportedRadioTrack != nil {
+            reportRadioTrackEnd(finished: false)
+        }
+        radio.didStart(track)
+        reportedRadioTrack = track
+    }
+    
+    /// Tells the radio how its track ended, once per start.
+    private func reportRadioTrackEnd(finished: Bool) {
+        guard let radio = radio, let track = reportedRadioTrack else { return }
+        reportedRadioTrack = nil
+        
+        let played = currentTime
+        if finished {
+            radio.didFinish(track, playedSeconds: played.isFinite ? played : track.duration)
+        }
+        else {
+            radio.didSkip(track, playedSeconds: played)
         }
     }
     

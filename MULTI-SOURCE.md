@@ -63,6 +63,29 @@ Build: `xcodebuild -project Nuage.xcodeproj -scheme Nuage -configuration Release
   parsing, URL signing, errors). Requests go to a `URLProtocol` mock with hand-written
   fixtures; nothing reaches Yandex.
 
+## «Моя волна» (Yandex Music radio)
+
+- `YandexMusic/Sources/YandexMusic/Rotor.swift`: the rotor API.
+  `GET /rotor/station/user:onyourwave/tracks?settings2=true[&queue=<last track id>:<its album id>]`
+  returns a batch with a `batchId`; `POST /rotor/station/user:onyourwave/feedback?batch-id=…`
+  takes JSON `radioStarted` / `trackStarted` / `trackFinished` / `skip` (with
+  `totalPlayedSeconds`); `POST /users/{uid}/dislikes/tracks/add-multiple` dislikes a track.
+  MarshalX/yandex-music-api is the reference; no code is copied.
+- `RadioSession` (in `MusicProvider.swift`) is the provider-neutral seam; Yandex's
+  `YandexWave` belongs to the sign-in session that started it and goes quiet after a
+  sign-out or an account switch; the player then ends the radio at the next batch
+  and hides the dislike button.
+- Sidebar → Яндекс Музыка → «Моя волна» (only while signed in). Choosing it starts the
+  radio; the screen lists the queued tracks and has Play / Start Over / Stop.
+  `StreamPlayer` asks for the next batch when two tracks or fewer are left, and
+  waits for it if the queue runs out. Next / media keys count as a skip, playing to the
+  end as `trackFinished`. Playing anything else ends the radio. Shuffle is ignored
+  while the radio plays.
+- Player bar: the heart likes a wave track as usual; the thumbs-down (radio tracks only)
+  sends a skip, adds the track to the account's dislikes and moves on.
+- Tests: 12 more in `RotorTests.swift` (request building, JSON bodies, parsing,
+  errors), 44 in total, on the same `URLProtocol` mock with hand-written fixtures.
+
 ## Next
 
 5. Spotify provider (Web API + controlling the Spotify app).

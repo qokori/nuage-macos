@@ -50,6 +50,8 @@ public struct Endpoint: Equatable {
     public var path: String
     public var query = [URLQueryItem]()
     public var form: [URLQueryItem]? = nil
+    /// A JSON body, for the endpoints that take one instead of a form.
+    public var json: Data? = nil
 
     public static func accountStatus() -> Endpoint {
         return Endpoint(method: .get, path: "account/status")
@@ -157,6 +159,10 @@ public final class YandexMusicClient {
         if let form = endpoint.form {
             request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
             request.httpBody = Data(formEncoded(form).utf8)
+        }
+        else if let json = endpoint.json {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = json
         }
         return request
     }

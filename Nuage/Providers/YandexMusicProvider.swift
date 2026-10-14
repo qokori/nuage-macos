@@ -35,9 +35,9 @@ struct InvalidPlaylistIDError: Error {
 final class YandexMusicProvider: MusicProvider {
 
     let id = ProviderID.yandexMusic
-    let capabilities: ProviderCapabilities = [.search, .likes, .toggleLike, .playlists]
+    let capabilities: ProviderCapabilities = [.search, .likes, .toggleLike, .playlists, .radio]
 
-    private let client: YandexMusicClient
+    fileprivate let client: YandexMusicClient
     private let tokenStore: SecretStore
     private let authSubject = CurrentValueSubject<AuthState, Never>(.signedOut)
     private var subscriptions = Set<AnyCancellable>()
@@ -50,7 +50,10 @@ final class YandexMusicProvider: MusicProvider {
     /// Bumped on every sign-in and sign-out. Answers to requests of an earlier
     /// session are dropped, so they cannot sign a signed-out user back in or
     /// expire a fresh session.
-    private var generation = 0
+    fileprivate private(set) var generation = 0
+    /// Requests nobody waits for (radio feedback, dislikes), kept until they finish,
+    /// even when the radio that sent them is gone.
+    private var pendingRequests = [UUID: AnyCancellable]()
 
     /// The client's session is ephemeral: no on-disk HTTP cache that could keep
     /// requests (and their `Authorization` header) or account data.
@@ -149,7 +152,7 @@ final class YandexMusicProvider: MusicProvider {
 
     /// A request of the current session rejected for authorization marks it expired.
     /// Call on the main thread: the session is captured when the request is made.
-    private func checked<T>(_ publisher: AnyPublisher<T, Error>) -> AnyPublisher<T, Error> {
+    fileprivate func checked<T>(_ publisher: AnyPublisher<T, Error>) -> AnyPublisher<T, Error> {
         let generation = self.generation
 
         return publisher
@@ -165,7 +168,7 @@ final class YandexMusicProvider: MusicProvider {
             .eraseToAnyPublisher()
     }
 
-    private func currentUID() -> AnyPublisher<Int, Error> {
+    fileprivate func currentUID() -> AnyPublisher<Int, Error> {
         if let uid = uid {
             return Just(uid).setFailureType(to: Error.self).eraseToAnyPublisher()
         }
@@ -269,6 +272,27 @@ final class YandexMusicProvider: MusicProvider {
             .eraseToAnyPublisher()
     }
 
+    // MARK: - «Моя волна»
+
+    func radio() -> (any RadioSession)? {
+        guard isSignedIn else { return nil }
+        return YandexWave(owner: self, station: YandexMusicClient.myWave, from: YandexMusicClient.myWaveFrom)
+    }
+
+    /// Sends a request whose answer only matters for the log. Call on the main thread.
+    fileprivate func fireAndForget(_ request: AnyPublisher<Void, Error>, _ description: String) {
+        let id = UUID()
+        // The answer comes on the next run loop pass at the earliest, after the cancellable is stored
+        pendingRequests[id] = request
+            .receive(on: RunLoop.main)
+            .sink(receiveCompletion: { [weak self] completion in
+                if case let .failure(error) = completion {
+                    print("Failed to \(description): \(error)")
+                }
+                self?.pendingRequests[id] = nil
+            }, receiveValue: { _ in })
+    }
+
     /// The file URL has no extension, so the MIME type is given where the OS allows it.
     private static func asset(for link: StreamLink) -> AVURLAsset {
         var options = [String: Any]()
@@ -276,6 +300,108 @@ final class YandexMusicProvider: MusicProvider {
             options[AVURLAssetOverrideMIMETypeKey] = (link.codec.lowercased() == "aac") ? "audio/aac" : "audio/mpeg"
         }
         return AVURLAsset(url: link.url, options: options)
+    }
+
+}
+
+// MARK: - «Моя волна»
+
+/// One listening session of «Моя волна» (the rotor station `user:onyourwave`).
+/// It belongs to the provider session it was started in: after a sign-out or a
+/// switch of accounts it loads nothing and reports nothing.
+final class YandexWave: RadioSession {
+
+    let provider = ProviderID.yandexMusic
+    let title = ProviderID.yandexMusic.radioTitle
+
+    private weak var owner: YandexMusicProvider?
+    private let station: String
+    private let from: String
+    private let generation: Int
+    /// The batch each track came in; its feedback names that batch.
+    private var batchIDs = [String: String]()
+    /// How the station names each track when asked for the batch after it.
+    private var queueIDs = [String: String]()
+    private var didReportRadioStart = false
+
+    fileprivate init(owner: YandexMusicProvider, station: String, from: String) {
+        self.owner = owner
+        self.station = station
+        self.from = from
+        self.generation = owner.generation
+    }
+
+    var isActive: Bool {
+        return liveOwner != nil
+    }
+
+    /// The provider still runs the session this radio was started in.
+    private var liveOwner: YandexMusicProvider? {
+        guard let owner = owner, owner.generation == generation, owner.isSignedIn else { return nil }
+        return owner
+    }
+
+    func nextBatch(after last: MediaTrack?) -> AnyPublisher<[MediaTrack], Error> {
+        guard let owner = liveOwner else {
+            return Fail(error: RadioEndedError()).eraseToAnyPublisher()
+        }
+
+        let queue = last.map { queueIDs[$0.id.rawID] ?? $0.id.rawID }
+        return owner.checked(owner.client.stationTracks(station, queue: queue))
+            .receive(on: RunLoop.main)
+            .tryMap { [weak self] batch -> [MediaTrack] in
+                guard let self = self, self.liveOwner != nil else { throw RadioEndedError() }
+
+                let tracks = batch.tracks
+                for track in tracks {
+                    self.batchIDs[track.id.value] = batch.batchId
+                    self.queueIDs[track.id.value] = track.stationQueueID
+                }
+                // Once per listening session, with the first batch
+                if !self.didReportRadioStart {
+                    self.didReportRadioStart = true
+                    self.send(.radioStarted(from: self.from), batchID: batch.batchId)
+                }
+                return tracks.map(MediaTrack.init)
+            }
+            .eraseToAnyPublisher()
+    }
+
+    func didStart(_ track: MediaTrack) {
+        send(.trackStarted(track.id.rawID), for: track)
+    }
+
+    func didFinish(_ track: MediaTrack, playedSeconds: TimeInterval) {
+        send(.trackFinished(track.id.rawID, playedSeconds: playedSeconds), for: track)
+    }
+
+    func didSkip(_ track: MediaTrack, playedSeconds: TimeInterval) {
+        send(.skip(track.id.rawID, playedSeconds: playedSeconds), for: track)
+    }
+
+    /// A skip for the station, and the track goes into the account's dislikes.
+    func dislike(_ track: MediaTrack, playedSeconds: TimeInterval) {
+        didSkip(track, playedSeconds: playedSeconds)
+
+        guard let owner = liveOwner else { return }
+        let request = owner.currentUID()
+            .flatMap { [weak self] uid -> AnyPublisher<Void, Error> in
+                // The uid may have been looked up while the session changed
+                guard let owner = self?.liveOwner else { return Fail(error: RadioEndedError()).eraseToAnyPublisher() }
+                return owner.checked(owner.client.setDisliked(true, trackIDs: [track.id.rawID], uid: uid))
+            }
+            .eraseToAnyPublisher()
+        owner.fireAndForget(request, "dislike a track")
+    }
+
+    private func send(_ feedback: StationFeedback, for track: MediaTrack) {
+        send(feedback, batchID: batchIDs[track.id.rawID])
+    }
+
+    private func send(_ feedback: StationFeedback, batchID: String?) {
+        guard let owner = liveOwner else { return }
+        owner.fireAndForget(owner.checked(owner.client.sendFeedback(feedback, station: station, batchID: batchID)),
+                            "send «\(title)» feedback (\(feedback.kind.rawValue))")
     }
 
 }

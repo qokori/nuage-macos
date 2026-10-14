@@ -38,6 +38,14 @@ enum ProviderID: String, CaseIterable, Codable, Hashable, Identifiable {
         }
     }
 
+    /// The name of the service's personal radio (`ProviderCapabilities.radio`).
+    var radioTitle: String {
+        switch self {
+        case .yandexMusic: return "Моя волна"
+        case .soundCloud, .spotify: return "Radio"
+        }
+    }
+
 }
 
 /// What a provider can do. The UI hides what a provider lacks instead of failing on tap.
@@ -61,6 +69,8 @@ struct ProviderCapabilities: OptionSet, Hashable {
     static let stations = ProviderCapabilities(rawValue: 1 << 11)
     /// Followed artists and artist pages.
     static let following = ProviderCapabilities(rawValue: 1 << 12)
+    /// A personal endless radio (Yandex Music's «Моя волна»), see `RadioSession`.
+    static let radio = ProviderCapabilities(rawValue: 1 << 13)
 
 }
 
@@ -176,6 +186,41 @@ protocol RemotePlaybackController: AnyObject {
 
 }
 
+// MARK: - Radio
+
+/// An endless queue the service fills for the listener (Yandex Music's «Моя волна»).
+/// The player asks for the next batch before the queue runs out and reports what the
+/// listener does with each track, so the service can tune what comes next.
+/// Used on the main thread.
+protocol RadioSession: AnyObject {
+
+    var provider: ProviderID { get }
+    var title: String { get }
+    /// `false` once the account the radio belongs to signed out or was replaced:
+    /// it then loads and reports nothing.
+    var isActive: Bool { get }
+
+    /// More tracks. `last` is the last radio track queued so far; `nil` asks for the first batch.
+    func nextBatch(after last: MediaTrack?) -> AnyPublisher<[MediaTrack], Error>
+    func didStart(_ track: MediaTrack)
+    /// The track played to its end.
+    func didFinish(_ track: MediaTrack, playedSeconds: TimeInterval)
+    /// The listener moved on before the end.
+    func didSkip(_ track: MediaTrack, playedSeconds: TimeInterval)
+    /// The listener does not want the track. Counts as a skip too; the player moves on.
+    func dislike(_ track: MediaTrack, playedSeconds: TimeInterval)
+
+}
+
+/// The radio's account signed out, or another account signed in.
+struct RadioEndedError: LocalizedError {
+
+    var errorDescription: String? {
+        return "the account it belongs to is no longer signed in."
+    }
+
+}
+
 // MARK: - Provider
 
 enum AuthState: Equatable {
@@ -231,6 +276,8 @@ protocol MusicProvider: AnyObject {
     func playbackSource(for track: MediaTrack) -> AnyPublisher<PlaybackSource, Error>
     /// Called when a track of this provider starts playing (history, scrobbling).
     func didStartPlayback(of track: MediaTrack)
+    /// A new session of the personal radio. `nil` without `.radio` or while signed out.
+    func radio() -> (any RadioSession)?
 
 }
 
@@ -243,6 +290,8 @@ extension MusicProvider {
     var accountNotice: String? { nil }
 
     func didStartPlayback(of track: MediaTrack) {}
+
+    func radio() -> (any RadioSession)? { nil }
 
     func unsupported<T>(_ capability: String) -> AnyPublisher<T, Error> {
         return Fail(error: ProviderUnsupportedError(provider: id, capability: capability))

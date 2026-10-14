@@ -1,0 +1,10 @@
+{
+  "invocationInfo": {"hostname": "fixture", "req-id": "fixture-rotor-2"},
+  "result": {
+    "id": {"type": "user", "tag": "onyourwave"},
+    "sequence": [
+      {"type": "track", "liked": false, "track": {"id": "66600001", "title": "Wave Four", "durationMs": 199000, "artists": [{"id": 1, "name": "Artist Four"}], "albums": [{"id": 2}]}}
+    ],
+    "batchId": "fixture-batch-2.efgh"
+  }
+}
